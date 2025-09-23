@@ -1,3 +1,4 @@
 archive/*
 rm_env/
 __pycache__/
+~$*
