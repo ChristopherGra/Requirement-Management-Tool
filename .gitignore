@@ -2,3 +2,4 @@ archive/*
 rm_env/
 __pycache__/
 ~$*
+requirement_template_gen1*
