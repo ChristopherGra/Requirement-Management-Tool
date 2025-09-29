@@ -6,7 +6,7 @@ This tool processes requirement documents from various formats (Excel, CSV, PDF)
 
 ## Important Note About Sample Data
 
-**All content in this repository is generic and fictional.** The `sample_requirements_specification.pdf` contains only basic software application requirements created for demonstration purposes. No classified, sensitive, or real aerospace data is included in this public repository.
+**All content in this repository is generic and fictional.** The requirement documents contain only basic software application requirements created for demonstration purposes.
 
 ## Features
 
