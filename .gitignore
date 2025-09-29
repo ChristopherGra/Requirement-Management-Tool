@@ -1,5 +1,18 @@
-archive/*
+.github
+archive/
 rm_env/
 __pycache__/
 ~$*
 requirement_template_gen1*
+
+# Ignore all PDFs except sample files
+requirement_documents/*.pdf
+requirement_documents/*.xlsm
+requirement_documents/*.xlsx
+
+# Keep only the dummy/sample files
+!requirement_documents/sample_requirements_specification.pdf
+!requirement_documents/sample_requirements.csv
+!requirement_documents/sample_requirements.xlsx
+!requirement_documents/sample_requirements_alt_columns.csv
+!requirement_documents/sample_requirements_alt_columns.xlsx
