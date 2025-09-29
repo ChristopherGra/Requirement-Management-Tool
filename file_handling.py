@@ -2,6 +2,13 @@ import os
 import pandas as pd
 import csv
 
+# Debug mode configuration
+DEBUG_MODE = False  # Set to True to enable automatic responses
+DEBUG_RESPONSES = {
+    "sheet_selection": "1",      # Always select first sheet
+    "column_mapping": "skip",    # Always skip unmapped columns
+}
+
 # column order and names
 COLUMNS = [
     "Parent ID",
@@ -18,7 +25,8 @@ COLUMNS = [
     "Compliance Notes",
     "Verification",
     "Verification Notes",
-    "Reference Document"
+    "Reference Document",
+    "Original ESA Identifier"
 ]
 
 # Define how incoming columns map to target columns (case-insensitive)
@@ -26,6 +34,9 @@ COLUMN_MAPPING = {
     "req id": "Requirement ID",
     "requirement id": "Requirement ID",
     "id": "Requirement ID",
+    "object identifier": "Requirement ID",
+    "object id": "Requirement ID",
+    "parent": "Parent ID",
     "parent id": "Parent ID",
     "parent requirement id": "Parent ID",
     "source": "Parent ID",
@@ -41,10 +52,29 @@ COLUMN_MAPPING = {
     "notes": "Notes",
     "comments": "Notes",
     "remarks": "Remarks",
+    "responsibility": "Responsibility",
+    "responsible": "Responsibility",
+    "owner": "Responsibility",
+    "applicability": "Applicability",
+    "applicable": "Applicability",
     "verification": "Verification",
+    "verification method": "Verification",
     "compliance": "Compliance",
     "status": "Compliance",
     "compliance status": "Compliance",
+    "compliance note": "Compliance Notes",
+    "compliance notes": "Compliance Notes",
+    "compliance comment": "Compliance Notes",
+    "verification note": "Verification Notes",
+    "verification notes": "Verification Notes",
+    "verification comment": "Verification Notes",
+    "reference": "Reference Document",
+    "reference document": "Reference Document",
+    "ref doc": "Reference Document",
+    "document": "Reference Document",
+    "original esa identifier": "Original ESA Identifier",
+    "esa identifier": "Original ESA Identifier",
+    "esa id": "Original ESA Identifier",
 }
 
 # Compliance normalization
@@ -85,6 +115,7 @@ def generate_template(path):
     df.at[0, "Verification"] = "D/A/T/I"
     df.at[0, "Verification Notes"] = ""
     df.at[0, "Reference Document"] = "RD1"
+    df.at[0, "Original ESA Identifier"] = "R-MIS-GEN-0001"
 
     if path.endswith(".csv"):
         df.to_csv(path, index=False)
@@ -93,10 +124,81 @@ def generate_template(path):
 
     print(f"Template file created at {path}")
 
-def normalize_file(input_path, output_path):
+def list_directory(path):
+    """List all files in the given directory."""
+    try:
+        files = os.listdir(path)
+        return [os.path.join(path, file) for file in files if file != ".placeholder"]
+    except Exception as e:
+        print(f"Error accessing directory '{path}': {e}")
+        return []
+
+def debug_input(prompt, debug_key=None, fallback_response=""):
+    """Helper function for input that can be overridden in debug mode."""
+    if DEBUG_MODE and debug_key and debug_key in DEBUG_RESPONSES:
+        response = DEBUG_RESPONSES[debug_key]
+        print(f"{prompt}{response}  [DEBUG MODE]")
+        return response
+    else:
+        return input(prompt)
+
+def process_column_data(series):
+    """Process column data by converting to string, stripping whitespace, and removing quotes."""
+    return (
+        series
+        .astype(str)
+        .str.strip()
+        .str.replace('"', '', regex=False) 
+    )
+
+def normalize_file(input_path):
     ext = os.path.splitext(input_path)[1].lower()
+    
     if ext in [".xls", ".xlsx", ".xlsm"]:
-        df = pd.read_excel(input_path)
+        # Check if file has multiple sheets
+        excel_file = pd.ExcelFile(input_path)
+        sheet_names = excel_file.sheet_names
+        
+        if len(sheet_names) > 1:
+            print(f"\nFile '{os.path.basename(input_path)}' contains multiple sheets:")
+            for i, sheet in enumerate(sheet_names, 1):
+                print(f"  {i}. {sheet}")
+            
+            while True:
+                try:
+                    choice = debug_input(f"Please enter the sheet name or number (1-{len(sheet_names)}): ", "sheet_selection").strip()
+                    
+                    # Check if user entered a number
+                    if choice.isdigit():
+                        choice_num = int(choice)
+                        if 1 <= choice_num <= len(sheet_names):
+                            selected_sheet = sheet_names[choice_num - 1]
+                            break
+                        else:
+                            print(f"Please enter a number between 1 and {len(sheet_names)}")
+                            continue
+                    
+                    # Check if user entered a sheet name
+                    elif choice in sheet_names:
+                        selected_sheet = choice
+                        break
+                    else:
+                        print(f"Sheet '{choice}' not found. Available sheets: {', '.join(map(str, sheet_names))}")
+                        continue
+                        
+                except KeyboardInterrupt:
+                    print("\nOperation cancelled by user.")
+                    return None
+                except Exception as e:
+                    print(f"Invalid input: {e}")
+                    continue
+            
+            print(f"Reading sheet: '{selected_sheet}'")
+            df = pd.read_excel(input_path, sheet_name=selected_sheet)
+        else:
+            # Only one sheet, read it directly
+            df = pd.read_excel(input_path)
+            
     elif ext == ".csv":
         df = pd.read_csv(input_path, encoding="utf-8")
     else:
@@ -107,31 +209,82 @@ def normalize_file(input_path, output_path):
 
     # Map incoming columns to target columns
     mapped_df = pd.DataFrame(columns=COLUMNS)
-    unmapped = 0
+    unmapped_columns = []
     for i, src_col in enumerate(df.columns):
         df.iloc[:, i] = df.iloc[:, i]
         if src_col in COLUMN_MAPPING:
             tgt_col = COLUMN_MAPPING[src_col]
             print(f"Mapping column '{src_col}' to '{tgt_col}'")
-            mapped_df[tgt_col] = (
-                                    df[src_col]
-                                    .astype(str)                          # make sure it’s string
-                                    .str.strip()                          # trim whitespace
-                                    .str.replace('"', '', regex=False)    # remove quotes
-                                 )
+            mapped_df[tgt_col] = process_column_data(df[src_col])
             
             if tgt_col == "Definition":
                 print(mapped_df[tgt_col])
 
         else:
-            print(f"Ignoring unmapped column '{src_col}'")
-            unmapped += 1
+            unmapped_columns.append(src_col)
+    
+    # Handle unmapped columns interactively
+    if unmapped_columns:
+        print(f"\nFound {len(unmapped_columns)} unmapped column(s):")
+        for col in unmapped_columns:
+            print(f"  - '{col}'")
+        
+        for src_col in unmapped_columns:
+            print(f"\nColumn '{src_col}' could not be automatically mapped.")
+            
+            while True:
+                try:
+                    print(f"\nAvailable target columns:")
+                    # Display columns in 4 columns for compact view
+                    cols_per_row = 4
+                    for i in range(0, cols_per_row):
+                        row_items = []
+                        for j in range(0, len(COLUMNS), cols_per_row):
+                            if i + j < len(COLUMNS):
+                                col_num = i + j + 1
+                                col_name = COLUMNS[i + j]
+                                row_items.append(f"{col_num:2d}. {col_name:<20}")
+                        print("  " + " ".join(row_items))
 
-    if unmapped > 0:
-        print(f"Warning: {unmapped} unmapped columns were ignored.")
-        print(f"{len(df.columns)-unmapped} columns out of {len(df.columns)} were mapped.")
+                    choice = debug_input(f"\nEnter target column name/number for '{src_col}' (or 'skip' to ignore): ", "column_mapping").strip()
+                    
+                    if choice.lower() == 'skip' or choice == '':
+                        print(f"Skipping column '{src_col}'")
+                        break
+                    
+                    # Check if user entered a number
+                    elif choice.isdigit():
+                        choice_num = int(choice)
+                        if 1 <= choice_num <= len(COLUMNS):
+                            tgt_col = COLUMNS[choice_num - 1]
+                            print(f"Mapping column '{src_col}' to '{tgt_col}'")
+                            mapped_df[tgt_col] = process_column_data(df[src_col])
+                            break
+                        else:
+                            print(f"Please enter a number between 1 and {len(COLUMNS)}")
+                            continue
+                    
+                    # Check if user entered a target column name
+                    elif choice in COLUMNS:
+                        tgt_col = choice
+                        print(f"Mapping column '{src_col}' to '{tgt_col}'")
+                        mapped_df[tgt_col] = process_column_data(df[src_col])
+                        break
+                    else:
+                        print(f"Column '{choice}' not found. Available columns: {', '.join(COLUMNS)}")
+                        continue
+                        
+                except KeyboardInterrupt:
+                    print("\nOperation cancelled by user.")
+                    return None
+                except Exception as e:
+                    print(f"Invalid input: {e}")
+                    continue
+        
+        mapped_count = len(df.columns) - len(unmapped_columns)
+        print(f"\nMapping Summary: {mapped_count} columns mapped automatically, {len(unmapped_columns)} columns processed interactively")
     else:
-        print("All columns were successfully mapped.")
+        print("All columns were successfully mapped automatically.")
     
     # Ensure all target columns exist (fill missing)
     for col in COLUMNS:
@@ -150,14 +303,25 @@ def normalize_file(input_path, output_path):
     # Reorder columns exactly
     mapped_df = mapped_df[COLUMNS]
 
-    # Save to CSV
-    mapped_df.to_csv(output_path, index=False, quoting=csv.QUOTE_NONE, escapechar='\\', sep=';')
-    print(f"Normalized file saved to {output_path}")
+    return mapped_df
 
-    #print(mapped_df["Definition"])
+def save_to_file(df, path):
+    ext = os.path.splitext(path)[1].lower()
+    if ext in [".xls", ".xlsx", ".xlsm"]:
+        df.to_excel(path, index=False)
+    elif ext == ".csv":
+        df.to_csv(path, index=False, quoting=csv.QUOTE_NONE, escapechar='\\', sep=';')
+    else:
+        raise ValueError(f"Unsupported file type: {ext}")
+    print(f"File saved to {path}")
 
 if __name__ == "__main__":
-    input_file = "archive/WIMU.xlsx"
+    # Enable debug mode for automatic responses (no user input required)
+    # DEBUG_MODE = True  # Uncomment this line to enable debug mode
+    
     #generate_template("requirement_template_gen1.csv")
-
-    normalize_file(input_file, "normalized_requirements.csv")
+    
+    dfs = []
+    for file in list_directory("archive"):
+        print(f"\nProcessing file: {file}")
+        dfs.append(normalize_file(file))
