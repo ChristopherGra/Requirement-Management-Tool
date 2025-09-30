@@ -161,4 +161,4 @@ for req in all_reqs:
         compliance_comment=compliance_comment
     ))
 
-export_requirements_to_excel(requirements, "extracted_requirements_original.csv")
+export_requirements_to_excel(requirements, "output/extracted_requirements.csv")
