@@ -4,7 +4,7 @@ import re
 
 file = r"requirement_documents/sample_requirements_specification.pdf"
 
-doc = pymupdf.open(file)
+doc = pymupdf.open(file, )
 
 class Requirement:
   def __init__(self, id, object_type, definition, source, verification, compliance, allocation, comments, compliance_comment):
@@ -52,29 +52,31 @@ def export_requirements_to_excel(requirements, output_path):
         })
     df = pd.DataFrame(data)
     if output_path.endswith('.csv'):
-        df.to_csv(output_path, index=False)
+        df.to_csv(output_path, index=False, sep=';')
     else:
         df.to_excel(output_path, index=False)
 
 complete_doc_split = []
 for page in doc:
-  text = page.get_text() # pyright: ignore[reportAttributeAccessIssue]
-  page_split = [re.sub(r'\s+', ' ', item.strip()) for item in text[120:].split("\n") if item.strip() != '']
-  complete_doc_split.extend(page_split)
+    text = page.get_text() # pyright: ignore[reportAttributeAccessIssue]
+    text = text.replace("≤", "<=").replace("≥", ">=").replace("–", "-").replace("’", "'")
+    page_split = [re.sub(r'\s+', ' ', item.strip()) for item in text[120:].split("\n") if item.strip() != '']
+    print(page_split)
+    complete_doc_split.extend(page_split)
 
 record_req = False
 all_reqs = []
 for line in complete_doc_split:
-  if line.startswith("ID :"):
-    record_req = True
-    single_req = []
+    if line.startswith("ID :"):
+        record_req = True
+        single_req = []
 
-  if record_req:
-    single_req.append(line)
+    if record_req:
+        single_req.append(line)
 
-  if line.startswith("Compliance Comment :"):
-    all_reqs.append(single_req)
-    record_req = False
+    if line.startswith("Compliance Comment :"):
+        all_reqs.append(single_req)
+        record_req = False
 
 #print(*all_reqs, sep="\n\n")
 
