@@ -73,6 +73,7 @@ COLUMN_MAPPING = {
     "ref doc": "Reference Document",
     "document": "Reference Document",
     "original esa identifier": "Original ESA Identifier",
+    "orginal esa identifier": "Original ESA Identifier",
     "esa identifier": "Original ESA Identifier",
     "esa id": "Original ESA Identifier",
 }
@@ -128,7 +129,7 @@ def list_directory(path):
     """List all files in the given directory."""
     try:
         files = os.listdir(path)
-        return [os.path.join(path, file) for file in files if file != ".placeholder"]
+        return [os.path.join(path, file) for file in files if file != ".placeholder" and not file.endswith(".md")]
     except Exception as e:
         print(f"Error accessing directory '{path}': {e}")
         return []
@@ -317,7 +318,7 @@ def save_to_file(df, path):
 
 if __name__ == "__main__":
     # Enable debug mode for automatic responses (no user input required)
-    # DEBUG_MODE = True  # Uncomment this line to enable debug mode
+    #DEBUG_MODE = True  # Uncomment this line to enable debug mode
     
     #generate_template("requirement_template_gen1.csv")
     
