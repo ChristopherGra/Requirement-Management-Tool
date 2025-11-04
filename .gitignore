@@ -5,6 +5,8 @@ __pycache__/
 dev_scripts/
 ~$*
 requirement_template_gen1*
+output/*.pdf
+ouput/*.csv
 
 # Ignore all PDFs except sample files
 requirement_documents/*.pdf
