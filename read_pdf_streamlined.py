@@ -237,7 +237,7 @@ def export_to_excel(requirements: List[Requirement], output_path: str) -> None:
     df = pd.DataFrame(data)
     
     if output_path.endswith('.csv'):
-        df.to_csv(output_path, index=False)
+        df.to_csv(output_path, index=False, sep=';')
     else:
         df.to_excel(output_path, index=False)
     
