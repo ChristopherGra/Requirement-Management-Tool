@@ -8,6 +8,7 @@ requirement_template_gen1*
 output/*.pdf
 ouput/*.csv
 .vscode/
+.cache/
 
 # Ignore all PDFs except sample files
 requirement_documents/*.pdf
