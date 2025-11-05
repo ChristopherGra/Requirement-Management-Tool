@@ -1,6 +1,9 @@
 import os
 import pandas as pd
 import csv
+import json
+import hashlib
+from pathlib import Path
 
 # Debug mode configuration
 DEBUG_MODE = False  # Set to True to enable automatic responses
@@ -8,6 +11,10 @@ DEBUG_RESPONSES = {
     "sheet_selection": "1",      # Always select first sheet
     "column_mapping": "skip",    # Always skip unmapped columns
 }
+
+# Cache configuration
+CACHE_DIR = ".cache"
+CACHE_FILE = os.path.join(CACHE_DIR, "file_processing_cache.json")
 
 # column order and names
 COLUMNS = [
@@ -129,10 +136,57 @@ def list_directory(path):
     """List all files in the given directory."""
     try:
         files = os.listdir(path)
-        return [os.path.join(path, file) for file in files if file != ".placeholder" and not file.endswith(".md")]
+        return [os.path.join(path, file) for file in files if file != ".placeholder" and not file.endswith(".md") and not file.startswith('~')]
     except Exception as e:
         print(f"Error accessing directory '{path}': {e}")
         return []
+
+def get_file_hash(file_path):
+    """Generate a hash of the file to uniquely identify it."""
+    # Use file path and modification time for uniqueness
+    stat = os.stat(file_path)
+    unique_string = f"{file_path}_{stat.st_mtime}_{stat.st_size}"
+    return hashlib.md5(unique_string.encode()).hexdigest()
+
+def load_cache():
+    """Load the processing cache from disk."""
+    if not os.path.exists(CACHE_FILE):
+        return {}
+    try:
+        with open(CACHE_FILE, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Warning: Could not load cache: {e}")
+        return {}
+
+def save_cache(cache):
+    """Save the processing cache to disk."""
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache, f, indent=2)
+    except Exception as e:
+        print(f"Warning: Could not save cache: {e}")
+
+def get_cached_choices(file_path):
+    """Get cached user choices for a file."""
+    cache = load_cache()
+    file_hash = get_file_hash(file_path)
+    return cache.get(file_hash, {})
+
+def save_user_choices(file_path, sheet_name=None, column_mappings=None):
+    """Save user choices for a file to the cache."""
+    cache = load_cache()
+    file_hash = get_file_hash(file_path)
+    
+    choices = cache.get(file_hash, {})
+    if sheet_name is not None:
+        choices['sheet_name'] = sheet_name
+    if column_mappings is not None:
+        choices['column_mappings'] = column_mappings
+    
+    cache[file_hash] = choices
+    save_cache(cache)
 
 def debug_input(prompt, debug_key=None, fallback_response=""):
     """Helper function for input that can be overridden in debug mode."""
@@ -155,44 +209,56 @@ def process_column_data(series):
 def normalize_file(input_path):
     ext = os.path.splitext(input_path)[1].lower()
     
+    # Load cached choices for this file
+    cached_choices = get_cached_choices(input_path)
+    selected_sheet = None
+    
     if ext in [".xls", ".xlsx", ".xlsm"]:
         # Check if file has multiple sheets
         excel_file = pd.ExcelFile(input_path)
         sheet_names = excel_file.sheet_names
         
         if len(sheet_names) > 1:
-            print(f"\nFile '{os.path.basename(input_path)}' contains multiple sheets:")
-            for i, sheet in enumerate(sheet_names, 1):
-                print(f"  {i}. {sheet}")
-            
-            while True:
-                try:
-                    choice = debug_input(f"Please enter the sheet name or number (1-{len(sheet_names)}): ", "sheet_selection").strip()
-                    
-                    # Check if user entered a number
-                    if choice.isdigit():
-                        choice_num = int(choice)
-                        if 1 <= choice_num <= len(sheet_names):
-                            selected_sheet = sheet_names[choice_num - 1]
+            # Check if we have a cached sheet selection
+            if 'sheet_name' in cached_choices and cached_choices['sheet_name'] in sheet_names:
+                selected_sheet = cached_choices['sheet_name']
+                print(f"\nUsing cached sheet selection: '{selected_sheet}' [from cache]")
+            else:
+                print(f"\nFile '{os.path.basename(input_path)}' contains multiple sheets:")
+                for i, sheet in enumerate(sheet_names, 1):
+                    print(f"  {i}. {sheet}")
+                
+                while True:
+                    try:
+                        choice = debug_input(f"Please enter the sheet name or number (1-{len(sheet_names)}): ", "sheet_selection").strip()
+                        
+                        # Check if user entered a number
+                        if choice.isdigit():
+                            choice_num = int(choice)
+                            if 1 <= choice_num <= len(sheet_names):
+                                selected_sheet = sheet_names[choice_num - 1]
+                                break
+                            else:
+                                print(f"Please enter a number between 1 and {len(sheet_names)}")
+                                continue
+                        
+                        # Check if user entered a sheet name
+                        elif choice in sheet_names:
+                            selected_sheet = choice
                             break
                         else:
-                            print(f"Please enter a number between 1 and {len(sheet_names)}")
+                            print(f"Sheet '{choice}' not found. Available sheets: {', '.join(map(str, sheet_names))}")
                             continue
-                    
-                    # Check if user entered a sheet name
-                    elif choice in sheet_names:
-                        selected_sheet = choice
-                        break
-                    else:
-                        print(f"Sheet '{choice}' not found. Available sheets: {', '.join(map(str, sheet_names))}")
+                            
+                    except KeyboardInterrupt:
+                        print("\nOperation cancelled by user.")
+                        return None
+                    except Exception as e:
+                        print(f"Invalid input: {e}")
                         continue
-                        
-                except KeyboardInterrupt:
-                    print("\nOperation cancelled by user.")
-                    return None
-                except Exception as e:
-                    print(f"Invalid input: {e}")
-                    continue
+                
+                # Save the sheet selection to cache
+                save_user_choices(input_path, sheet_name=selected_sheet)
             
             print(f"Reading sheet: '{selected_sheet}'")
             df = pd.read_excel(input_path, sheet_name=selected_sheet)
@@ -211,6 +277,11 @@ def normalize_file(input_path):
     # Map incoming columns to target columns
     mapped_df = pd.DataFrame(columns=COLUMNS)
     unmapped_columns = []
+    user_column_mappings = {}
+    
+    # Load cached column mappings
+    cached_mappings = cached_choices.get('column_mappings', {})
+    
     for i, src_col in enumerate(df.columns):
         df.iloc[:, i] = df.iloc[:, i]
         if src_col in COLUMN_MAPPING:
@@ -231,6 +302,19 @@ def normalize_file(input_path):
             print(f"  - '{col}'")
         
         for src_col in unmapped_columns:
+            # Check if we have a cached mapping for this column
+            if src_col in cached_mappings:
+                cached_target = cached_mappings[src_col]
+                if cached_target == 'skip' or cached_target == '':
+                    print(f"\nUsing cached choice for '{src_col}': skip [from cache]")
+                    user_column_mappings[src_col] = 'skip'
+                    continue
+                elif cached_target in COLUMNS:
+                    print(f"\nUsing cached mapping for '{src_col}' --> '{cached_target}' [from cache]")
+                    mapped_df[cached_target] = process_column_data(df[src_col])
+                    user_column_mappings[src_col] = cached_target
+                    continue
+            
             print(f"\nColumn '{src_col}' could not be automatically mapped.")
             
             while True:
@@ -251,6 +335,7 @@ def normalize_file(input_path):
                     
                     if choice.lower() == 'skip' or choice == '':
                         print(f"Skipping column '{src_col}'")
+                        user_column_mappings[src_col] = 'skip'
                         break
                     
                     # Check if user entered a number
@@ -260,6 +345,7 @@ def normalize_file(input_path):
                             tgt_col = COLUMNS[choice_num - 1]
                             print(f"Mapping column '{src_col}' to '{tgt_col}'")
                             mapped_df[tgt_col] = process_column_data(df[src_col])
+                            user_column_mappings[src_col] = tgt_col
                             break
                         else:
                             print(f"Please enter a number between 1 and {len(COLUMNS)}")
@@ -270,6 +356,7 @@ def normalize_file(input_path):
                         tgt_col = choice
                         print(f"Mapping column '{src_col}' to '{tgt_col}'")
                         mapped_df[tgt_col] = process_column_data(df[src_col])
+                        user_column_mappings[src_col] = tgt_col
                         break
                     else:
                         print(f"Column '{choice}' not found. Available columns: {', '.join(COLUMNS)}")
@@ -281,6 +368,10 @@ def normalize_file(input_path):
                 except Exception as e:
                     print(f"Invalid input: {e}")
                     continue
+        
+        # Save the new column mappings to cache
+        if user_column_mappings:
+            save_user_choices(input_path, column_mappings=user_column_mappings)
         
         mapped_count = len(df.columns) - len(unmapped_columns)
         print(f"\nMapping Summary: {mapped_count} columns mapped automatically, {len(unmapped_columns)} columns processed interactively")
@@ -326,3 +417,5 @@ if __name__ == "__main__":
     for file in list_directory("archive"):
         print(f"\nProcessing file: {file}")
         dfs.append(normalize_file(file))
+        
+        save_to_file(dfs[-1], os.path.join("output", os.path.basename(file.replace(" ", "_").split('.')[0] + "_normalized.csv")))
