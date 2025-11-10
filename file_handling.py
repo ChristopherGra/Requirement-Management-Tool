@@ -3,7 +3,8 @@ import pandas as pd
 import csv
 import json
 import hashlib
-from pathlib import Path
+import unicodedata
+import numpy as np
 
 # Debug mode configuration
 DEBUG_MODE = False  # Set to True to enable automatic responses
@@ -203,7 +204,9 @@ def process_column_data(series):
         series
         .astype(str)
         .str.strip()
-        .str.replace('"', '', regex=False) 
+        #.str.replace('"', '', regex=False) 
+        #.str.replace("'", '', regex=False)
+        #.str.replace("\n", " [linebreak] ", regex=False)
     )
 
 def normalize_file(input_path):
@@ -394,7 +397,34 @@ def normalize_file(input_path):
 
     # Reorder columns exactly
     mapped_df = mapped_df[COLUMNS]
+    try:
+    #     print(mapped_df.loc[[np.where(mapped_df["Parent ID"] == "EID-A IRD 2963")[0][0]]])
+    #     row = mapped_df.loc[[np.where(mapped_df["Parent ID"] == "EID-A IRD 2963")[0][0]]]
+    #     print(row["Definition"].to_string())
 
+    #     value = mapped_df.loc[mapped_df["Parent ID"].eq("EID-A IRD 2963"), "Definition"].iloc[0]
+    #     print([value])
+
+        # Normalize Unicode characters in all string columns
+        for col in mapped_df.columns:
+            if mapped_df[col].dtype == 'object':  # String columns
+                mapped_df[col] = mapped_df[col].apply(
+                    lambda x: normalize_unicode_text(str(x)) if pd.notna(x) and x != '' else x
+                )
+        
+
+        # print(mapped_df.loc[[np.where(mapped_df["Parent ID"] == "EID-A IRD 2963")[0][0]]])
+        # row = mapped_df.loc[[np.where(mapped_df["Parent ID"] == "EID-A IRD 2963")[0][0]]]
+        # print(row["Definition"].to_string())
+
+        # value = mapped_df.loc[mapped_df["Parent ID"].eq("EID-A IRD 2963"), "Definition"].iloc[0]
+        # print([value])
+
+        # exit()
+    except IndexError:
+        pass
+
+    
     return mapped_df
 
 def save_to_file(df, path):
@@ -402,10 +432,53 @@ def save_to_file(df, path):
     if ext in [".xls", ".xlsx", ".xlsm"]:
         df.to_excel(path, index=False)
     elif ext == ".csv":
-        df.to_csv(path, index=False, quoting=csv.QUOTE_NONE, escapechar='\\', sep=';')
+        df.to_csv(path, index=False, quoting=csv.QUOTE_NONE, escapechar='\n', sep=';')
     else:
         raise ValueError(f"Unsupported file type: {ext}")
     print(f"File saved to {path}")
+
+def normalize_unicode_text(text):
+    """
+    Normalize Unicode text to ASCII-friendly characters.
+    
+    Args:
+        text: Input text with Unicode characters
+        
+    Returns:
+        Normalized text with ASCII characters
+    """
+
+    # NFKD normalization converts compatibility characters to simpler forms
+    text = unicodedata.normalize('NFKD', text)
+    
+    # Encode to ASCII, ignoring characters that can't be represented
+    # This handles most accented characters automatically
+    text = text.encode('ascii', 'ignore').decode('ascii')
+    
+    # Manual replacements for math symbols that need special handling
+    replacements = {
+        '\u2264': '<=',  # less than or equal
+        '\u2265': '>=',  # greater than or equal
+        '\u2260': '!=',  # not equal
+        '\u00b1': '+-',  # plus-minus
+        '\u00d7': 'x',   # multiplication
+        '\u00f7': '/',   # division
+        '\u2212': '-',   # minus sign (different from hyphen)
+        '\u2013': '-',   # en dash
+        '\u2014': '--',  # em dash
+        '\u2018': "'",   # left single quote
+        '\u2019': "'",   # right single quote
+        '\u201c': '"',   # left double quote
+        '\u201d': '"',   # right double quote
+        '\u2022': '*',   # bullet point
+        '\u00a0': ' ',   # non-breaking space
+    }
+    
+    for unicode_char, ascii_replacement in replacements.items():
+        text = text.replace(unicode_char, ascii_replacement)
+    
+    return text
+
 
 if __name__ == "__main__":
     # Enable debug mode for automatic responses (no user input required)
