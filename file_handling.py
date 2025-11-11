@@ -450,6 +450,10 @@ def normalize_file(input_path):
         if user_column_mappings:
             save_user_choices(input_path, column_mappings=user_column_mappings)
         
+        # Save the new column mappings to cache
+        if user_column_mappings:
+            save_user_choices(input_path, column_mappings=user_column_mappings)
+        
         mapped_count = len(df.columns) - len(unmapped_columns)
         print(f"\nMapping Summary: {mapped_count} columns mapped automatically, {len(unmapped_columns)} columns processed interactively")
     else:
