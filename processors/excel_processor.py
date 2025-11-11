@@ -84,7 +84,7 @@ class ExcelProcessor(BaseProcessor):
             input_path: Path to Excel file
             
         Returns:
-            DataFrame from selected sheet
+            DataFrame from selected sheet or None if cancelled
         """
         excel_file = pd.ExcelFile(input_path)
         sheet_names : List[str] = [str(name) for name in excel_file.sheet_names]
