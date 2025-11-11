@@ -74,7 +74,7 @@ class ExcelProcessor(BaseProcessor):
             print(f"Unsupported file type: {ext}")
             return pd.DataFrame()
     
-    def _load_excel_with_sheet_selection(self, input_path: Path) -> pd.DataFrame:
+    def _load_excel_with_sheet_selection(self, input_path: Path) -> Optional[pd.DataFrame]:
         """
         Load Excel file with interactive sheet selection if multiple sheets.
         
@@ -87,7 +87,7 @@ class ExcelProcessor(BaseProcessor):
             DataFrame from selected sheet
         """
         excel_file = pd.ExcelFile(input_path)
-        sheet_names = excel_file.sheet_names
+        sheet_names : List[str] = [str(name) for name in excel_file.sheet_names]
         
         if len(sheet_names) == 1:
             # Only one sheet, read directly
@@ -226,7 +226,7 @@ class ExcelProcessor(BaseProcessor):
                         user_column_mappings[src_col] = 'skip'
                         continue
                     elif cached_target in COLUMNS:
-                        print(f"\nUsing cached mapping for '{src_col}' → '{cached_target}' [from cache]")
+                        print(f"\nUsing cached mapping for '{src_col}' --> '{cached_target}' [from cache]")
                         mapped_df[cached_target] = df[src_col].apply(clean_cell_value)
                         user_column_mappings[src_col] = cached_target
                         assigned_targets[cached_target] = src_col
