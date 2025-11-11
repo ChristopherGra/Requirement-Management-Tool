@@ -11,7 +11,7 @@ Usage:
     python requirements_processor_new.py --template output/template.xlsx
     python requirements_processor_new.py --clear-cache
     
-Author: Requirements Management Tool Project
+Author: Christopher Granabetter Ifa - UVIE
 Date: November 2025
 """
 
