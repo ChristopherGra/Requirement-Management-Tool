@@ -5,15 +5,13 @@ __pycache__/
 dev_scripts/
 ~$*
 requirement_template_gen1*
-output/*.pdf
-ouput/*.csv
 .vscode/
 .cache/
 
-# Ignore all PDFs except sample files
 requirement_documents/*.pdf
 requirement_documents/*.xlsm
 requirement_documents/*.xlsx
+output/*.csv
 
 # Keep only the dummy/sample files
 !requirement_documents/sample_requirements_specification.pdf
@@ -21,3 +19,4 @@ requirement_documents/*.xlsx
 !requirement_documents/sample_requirements.xlsx
 !requirement_documents/sample_requirements_alt_columns.csv
 !requirement_documents/sample_requirements_alt_columns.xlsx
+!output/sample*
