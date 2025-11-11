@@ -209,6 +209,116 @@ def process_column_data(series):
         #.str.replace("\n", " [linebreak] ", regex=False)
     )
 
+
+def display_column_mapping_menu(source_column, already_mapped=None):
+    """
+    Display an interactive menu for mapping a source column to target columns.
+    
+    Shows available target columns in a 4-column grid, with already-assigned 
+    columns displayed in dim and their source mappings shown.
+    
+    Args:
+        source_column: The source column name being mapped
+        already_mapped: Dict of {target_col: source_col} for already assigned columns
+        
+    Returns:
+        Tuple of (chosen_target_column, skip_flag) where skip_flag is True if user chose to skip
+    """
+    if already_mapped is None:
+        already_mapped = {}
+    
+    # ANSI color codes for formatting
+    RESET = '\033[0m'
+    DIM = '\033[2m'
+    
+    print(f"\nColumn '{source_column}' could not be automatically mapped.")
+    print(f"\nAvailable target columns:")
+    print(f"  {DIM}(Bold = already assigned){RESET}")
+    
+    # Display columns in 4-column grid
+    cols_per_row = 4
+    for row_idx in range(0, cols_per_row):
+        row_items = []
+        for col_idx in range(0, len(COLUMNS), cols_per_row):
+            if row_idx + col_idx < len(COLUMNS):
+                col_num = row_idx + col_idx + 1
+                col_name = COLUMNS[row_idx + col_idx]
+                
+                # Check if this column is already mapped
+                if col_name in already_mapped:
+                    mapped_source = already_mapped[col_name]
+                    # Display in dim with source mapping
+                    item = f"{DIM}{col_num:2d}. {col_name:<20}{RESET}"
+                else:
+                    # Normal display
+                    item = f"{col_num:2d}. {col_name:<20}"
+                
+                row_items.append(item)
+        
+        print("  " + " ".join(row_items))
+    
+    # Show mapping legend if there are already mapped columns
+    if already_mapped:
+        print(f"\n  {DIM}Current mappings:{RESET}")
+        for target, source in sorted(already_mapped.items()):
+            print(f"    {DIM}'{source}' --> '{target}'{RESET}")
+    
+    # Get user choice
+    while True:
+        try:
+            choice = debug_input(
+                f"\nEnter target column name/number for '{source_column}' (or 'skip' to ignore): ", 
+                "column_mapping"
+            ).strip()
+            
+            # Handle skip
+            if choice.lower() == 'skip' or choice == '':
+                print(f"Skipping column '{source_column}'")
+                return None, True
+            
+            # Handle numeric choice
+            if choice.isdigit():
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(COLUMNS):
+                    tgt_col = COLUMNS[choice_num - 1]
+                    
+                    # Warn if already mapped
+                    if tgt_col in already_mapped:
+                        print(f"  {DIM}Warning:{RESET} '{tgt_col}' is already mapped from '{already_mapped[tgt_col]}'")
+                        confirm = debug_input(f"  Overwrite? (y/n): ", "column_mapping").strip().lower()
+                        if confirm != 'y':
+                            continue
+                    
+                    print(f"Mapping column '{source_column}' → '{tgt_col}'")
+                    return tgt_col, False
+                else:
+                    print(f"Please enter a number between 1 and {len(COLUMNS)}")
+                    continue
+            
+            # Handle name choice
+            elif choice in COLUMNS:
+                tgt_col = choice
+                
+                # Warn if already mapped
+                if tgt_col in already_mapped:
+                    print(f"  {DIM}Warning:{RESET} '{tgt_col}' is already mapped from '{already_mapped[tgt_col]}'")
+                    confirm = debug_input(f"  Overwrite? (y/n): ", "column_mapping").strip().lower()
+                    if confirm != 'y':
+                        continue
+                
+                print(f"Mapping column '{source_column}' → '{tgt_col}'")
+                return tgt_col, False
+            else:
+                print(f"Column '{choice}' not found. Available columns: {', '.join(COLUMNS)}")
+                continue
+                
+        except KeyboardInterrupt:
+            print("\nOperation cancelled by user.")
+            return None, True
+        except Exception as e:
+            print(f"Invalid input: {e}")
+            continue
+
 def normalize_file(input_path):
     ext = os.path.splitext(input_path)[1].lower()
     
@@ -272,7 +382,8 @@ def normalize_file(input_path):
     elif ext == ".csv":
         df = pd.read_csv(input_path, encoding="utf-8")
     else:
-        raise ValueError(f"Unsupported file type: {ext}")
+        return None
+        #raise ValueError(f"Unsupported file type: {ext}")
 
     # Standardize column names (lowercase)
     df.columns = [c.strip().lower().replace("\"", "") for c in df.columns]
@@ -281,6 +392,7 @@ def normalize_file(input_path):
     mapped_df = pd.DataFrame(columns=COLUMNS)
     unmapped_columns = []
     user_column_mappings = {}
+    assigned_targets = {}
     
     # Load cached column mappings
     cached_mappings = cached_choices.get('column_mappings', {})
@@ -291,6 +403,7 @@ def normalize_file(input_path):
             tgt_col = COLUMN_MAPPING[src_col]
             print(f"Mapping column '{src_col}' to '{tgt_col}'")
             mapped_df[tgt_col] = process_column_data(df[src_col])
+            assigned_targets[tgt_col] = src_col
             
             if tgt_col == "Definition":
                 print(mapped_df[tgt_col])
@@ -304,6 +417,10 @@ def normalize_file(input_path):
         for col in unmapped_columns:
             print(f"  - '{col}'")
         
+        ### probably not needed
+        # # Track which target columns are already assigned
+        # assigned_targets = {tgt: src for src, tgt in user_column_mappings.items() if tgt != 'skip'}
+        
         for src_col in unmapped_columns:
             # Check if we have a cached mapping for this column
             if src_col in cached_mappings:
@@ -313,64 +430,21 @@ def normalize_file(input_path):
                     user_column_mappings[src_col] = 'skip'
                     continue
                 elif cached_target in COLUMNS:
-                    print(f"\nUsing cached mapping for '{src_col}' --> '{cached_target}' [from cache]")
+                    print(f"\nUsing cached mapping for '{src_col}' → '{cached_target}' [from cache]")
                     mapped_df[cached_target] = process_column_data(df[src_col])
                     user_column_mappings[src_col] = cached_target
+                    assigned_targets[cached_target] = src_col
                     continue
             
-            print(f"\nColumn '{src_col}' could not be automatically mapped.")
+            # Use the new display function
+            target_col, should_skip = display_column_mapping_menu(src_col, assigned_targets)
             
-            while True:
-                try:
-                    print(f"\nAvailable target columns:")
-                    # Display columns in 4 columns for compact view
-                    cols_per_row = 4
-                    for i in range(0, cols_per_row):
-                        row_items = []
-                        for j in range(0, len(COLUMNS), cols_per_row):
-                            if i + j < len(COLUMNS):
-                                col_num = i + j + 1
-                                col_name = COLUMNS[i + j]
-                                row_items.append(f"{col_num:2d}. {col_name:<20}")
-                        print("  " + " ".join(row_items))
-
-                    choice = debug_input(f"\nEnter target column name/number for '{src_col}' (or 'skip' to ignore): ", "column_mapping").strip()
-                    
-                    if choice.lower() == 'skip' or choice == '':
-                        print(f"Skipping column '{src_col}'")
-                        user_column_mappings[src_col] = 'skip'
-                        break
-                    
-                    # Check if user entered a number
-                    elif choice.isdigit():
-                        choice_num = int(choice)
-                        if 1 <= choice_num <= len(COLUMNS):
-                            tgt_col = COLUMNS[choice_num - 1]
-                            print(f"Mapping column '{src_col}' to '{tgt_col}'")
-                            mapped_df[tgt_col] = process_column_data(df[src_col])
-                            user_column_mappings[src_col] = tgt_col
-                            break
-                        else:
-                            print(f"Please enter a number between 1 and {len(COLUMNS)}")
-                            continue
-                    
-                    # Check if user entered a target column name
-                    elif choice in COLUMNS:
-                        tgt_col = choice
-                        print(f"Mapping column '{src_col}' to '{tgt_col}'")
-                        mapped_df[tgt_col] = process_column_data(df[src_col])
-                        user_column_mappings[src_col] = tgt_col
-                        break
-                    else:
-                        print(f"Column '{choice}' not found. Available columns: {', '.join(COLUMNS)}")
-                        continue
-                        
-                except KeyboardInterrupt:
-                    print("\nOperation cancelled by user.")
-                    return None
-                except Exception as e:
-                    print(f"Invalid input: {e}")
-                    continue
+            if should_skip:
+                user_column_mappings[src_col] = 'skip'
+            else:
+                mapped_df[target_col] = process_column_data(df[src_col])
+                user_column_mappings[src_col] = target_col
+                assigned_targets[target_col] = src_col
         
         # Save the new column mappings to cache
         if user_column_mappings:
@@ -487,8 +561,12 @@ if __name__ == "__main__":
     #generate_template("requirement_template_gen1.csv")
     
     dfs = []
-    for file in list_directory("archive"):
+    for file in list_directory("requirement_documents"):
+        # if file == "requirement_documents/sample_requirements.xlsx":
+        #     continue
         print(f"\nProcessing file: {file}")
-        dfs.append(normalize_file(file))
+        dfs = normalize_file(file)
         
-        save_to_file(dfs[-1], os.path.join("output", os.path.basename(file.replace(" ", "_").split('.')[0] + "_normalized.csv")))
+        if dfs is not None:
+            save_to_file(dfs, os.path.join("output", os.path.basename(file.replace(" ", "_").split('.')[0] + "_normalized.csv")))
+            #break
