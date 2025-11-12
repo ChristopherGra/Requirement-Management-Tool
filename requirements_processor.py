@@ -8,7 +8,7 @@ Normalizes requirements from Excel/CSV/PDF into DOORS-ready format.
 Usage:
     python requirements_processor_new.py input.xlsx -o output.csv
     python requirements_processor_new.py --batch archive/ --type pdf
-    python requirements_processor_new.py --template output/template.xlsx
+    python requirements_processor_new.py --template templates/requirements_template.xlsx
     python requirements_processor_new.py --clear-cache
     
 Author: Christopher Granabetter Ifa - UVIE
@@ -172,7 +172,7 @@ Examples:
   %(prog)s --batch requirement_documents/ --type pdf
   
   # Generate a template file
-  %(prog)s --template output/template.xlsx
+  %(prog)s --template templates/requirements_template.xlsx
   
   # Clear the file processing cache
   %(prog)s --clear-cache

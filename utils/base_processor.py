@@ -107,11 +107,6 @@ class BaseProcessor(ABC):
             
         data = [req.to_dict() for req in requirements]
         df = pd.DataFrame(data)
-        
-        # Ensure all columns exist in correct order
-        for col in COLUMNS:
-            if col not in df.columns:
-                df[col] = ""
                 
         return df[COLUMNS]
     
@@ -178,8 +173,8 @@ class BaseProcessor(ABC):
             output_path,
             sep=';',
             index=False,
-            quoting=csv.QUOTE_NONE,
-            escapechar='\\'
+            quoting=csv.QUOTE_MINIMAL,
+            doublequote=True
         )
         print(f"Saved to {output_path}")
     
@@ -249,8 +244,22 @@ def generate_template(output_path: Path):
     }
     df = pd.concat([df, pd.DataFrame([sample_row])], ignore_index=True)
     
-    # Export using BaseProcessor
-    processor = BaseProcessor.__new__(BaseProcessor)  # Create instance without __init__
-    processor.cache = None
-    processor.export(df, output_path)
+    # Export directly without instantiating BaseProcessor
+    output_path = Path(output_path)
+    suffix = output_path.suffix.lower()
+    
+    if suffix == '.csv':
+        df.to_csv(
+            output_path,
+            sep=';',
+            index=False,
+            encoding='utf-8',
+            quoting=csv.QUOTE_MINIMAL,
+            doublequote=True
+        )
+    else:
+        # Excel export
+        df.to_excel(output_path, index=False, sheet_name="Requirements")
+    
     print(f"Template generated: {output_path}")
+
