@@ -1,22 +1,33 @@
-.github
-archive/
+# Development Environment
 rm_env/
 __pycache__/
-dev_scripts/
-~$*
-requirement_template_gen1*
 .vscode/
-.cache/
+dev_scripts/
 
+# Runtime Artifacts
+.cache/
+~$*
+
+# Private Documentation
+INTERNAL_DOCS*
+
+# GitHub Workflows
+.github
+
+# Data Directories
+archive/
 requirement_documents/*.pdf
 requirement_documents/*.xlsm
 requirement_documents/*.xlsx
 output/*.csv
 
-# Keep only the dummy/sample files
+# Sample Files (keep these)
 !requirement_documents/sample_requirements_specification.pdf
 !requirement_documents/sample_requirements.csv
 !requirement_documents/sample_requirements.xlsx
 !requirement_documents/sample_requirements_alt_columns.csv
 !requirement_documents/sample_requirements_alt_columns.xlsx
 !output/sample*
+
+# Legacy Files
+requirement_template_gen1*
