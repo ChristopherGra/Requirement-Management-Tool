@@ -3,12 +3,11 @@ PDF processor for requirements extraction.
 Handles .pdf files with keyword-based parsing.
 """
 
-import re
 from pathlib import Path
 from typing import List
 
 try:
-    import pymupdf  # PyMuPDF
+    import pymupdf
 except ImportError:
     import fitz as pymupdf  # Fallback
 
@@ -130,20 +129,21 @@ class PDFProcessor(BaseProcessor):
         Returns:
             Requirement object with extracted fields
         """
-        # Initialize all fields
-        req_id = ""
-        object_type = ""
-        definition = ""
-        source = ""
-        verification = ""
-        compliance = ""
-        allocation = ""
-        comments = ""
-        compliance_comment = ""
+        # Initialize all fields as a dictionary
+        fields = {
+            "requirement_id": "",
+            "type": "",
+            "definition": "",
+            "source": "",
+            "verification": "",
+            "compliance": "",
+            "allocation": "",
+            "comments": "",
+            "compliance_comment": ""
+        }
         
         # Track multi-line field continuation
-        definition_next = False
-        justification_next = False
+        current_multiline_field = None
         
         for line in block:
             line_has_keyword = False
@@ -152,49 +152,34 @@ class PDFProcessor(BaseProcessor):
             for keyword, field in self.KEYWORDS.items():
                 if keyword in line:
                     value = line.replace(keyword, '').strip()
+                    fields[field] = value
                     
-                    # Map to field
-                    if field == "requirement_id":
-                        req_id = value
-                    elif field == "type":
-                        object_type = value
-                        definition_next = True  # Definition starts after Object Type
-                    elif field == "source":
-                        source = value
-                    elif field == "verification":
-                        verification = value
-                    elif field == "compliance":
-                        compliance = value
-                    elif field == "allocation":
-                        allocation = value
+                    # Set multi-line continuation flags
+                    if field == "type":
+                        current_multiline_field = "definition"
                     elif field == "comments":
-                        comments = value
-                        justification_next = True  # Comments can be multi-line
-                    elif field == "compliance_comment":
-                        compliance_comment = value
+                        current_multiline_field = "comments"
+                    else:
+                        current_multiline_field = None
                     
                     line_has_keyword = True
                     break
             
             # Handle multi-line continuation
-            if definition_next and not line_has_keyword:
-                definition += " " + line
-            
-            if justification_next and not line_has_keyword:
-                comments += " " + line
+            if not line_has_keyword and current_multiline_field:
+                fields[current_multiline_field] += " " + line
         
         # Create Requirement (map PDF fields to DOORS schema)
         req = Requirement(
-            requirement_id=req_id,
-            type=object_type,
-            definition=definition.strip(),
-            verification=verification,
-            compliance=compliance,
-            compliance_notes=compliance_comment.strip(),
-            notes=comments.strip(),
-            reference_document=source,
-            # Allocation goes to Responsibility field
-            responsibility=allocation,
+            requirement_id=fields["requirement_id"],
+            parent_id=fields["source"],
+            type=fields["type"],
+            definition=fields["definition"].strip(),
+            verification=fields["verification"],
+            compliance=fields["compliance"],
+            compliance_notes=fields["compliance_comment"].strip(),
+            notes=fields["comments"].strip(),
+            responsibility=fields["allocation"],
         )
         
         return req

@@ -3,7 +3,6 @@ Excel/CSV processor for requirements extraction.
 Handles .xlsx, .xls, .xlsm, and .csv files with interactive column mapping.
 """
 
-import os
 import pandas as pd
 from pathlib import Path
 from typing import List, Tuple, Optional, Union

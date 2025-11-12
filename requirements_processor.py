@@ -64,9 +64,9 @@ def process_single_file(
     if cache is None:
         cache = FileCache()
     
-    print(f"\n{'='*60}")
+    print(f"\n{'-'*60}")
     print(f"Processing: {input_path.name}")
-    print(f"{'='*60}")
+    print(f"{'-'*60}")
     
     # Get appropriate processor
     try:
@@ -92,7 +92,7 @@ def process_single_file(
     # Export
     processor.export(df, output_path)
     
-    print(f"{'='*60}\n")
+    print(f"{'-'*60}\n")
     return True
 
 
@@ -112,10 +112,10 @@ def process_batch(
     if cache is None:
         cache = FileCache()
     
-    print(f"\n{'#'*60}")
-    print(f"# BATCH PROCESSING: {directory}")
-    print(f"# Filter: {file_type_filter}")
-    print(f"{'#'*60}\n")
+    print(f"\n{'-'*60}")
+    print(f"BATCH PROCESSING: {directory}")
+    print(f"Filter: {file_type_filter}")
+    print(f"{'-'*60}\n")
     
     # Supported extensions
     extensions = {
@@ -149,9 +149,7 @@ def process_batch(
             print(f"Error processing {file_path.name}: {e}")
             continue
     
-    print(f"\n{'#'*60}")
-    print(f"# BATCH COMPLETE: {success_count}/{len(files)} files processed successfully")
-    print(f"{'#'*60}\n")
+    print(f"BATCH COMPLETE: {success_count}/{len(files)} files processed")
 
 
 def main():

@@ -77,10 +77,6 @@ def clean_cell_value(value):
     # Normalize Unicode characters
     text = normalize_unicode_text(text)
     
-    # Optional transformations (currently commented out in original)
-    # text = text.replace('"', '').replace("'", '')
-    # text = text.replace("\n", " [linebreak] ")
-    
     return text
 
 
