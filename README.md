@@ -20,14 +20,6 @@ A modular Python tool that processes requirement documents from various formats 
 - **Batch Processing**: Process entire directories with file type filtering
 - **DOORS Integration**: Export to DOORS-compatible CSV (semicolon delimiter) or Excel
 
-### Technical Highlights
-- **Modular Architecture**: Separate packages for utilities and file-type processors
-- **Factory Pattern**: Runtime processor selection based on file type
-- **Abstract Base Classes**: Enforces consistent interface across processors
-- **Type Safety**: Full type hints with mypy compliance
-- **Interactive UX**: Testable input with debug mode support
-- **VS Code Integration**: Pre-configured debug launch configurations
-
 ## Installation
 
 ```bash
