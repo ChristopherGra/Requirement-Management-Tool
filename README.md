@@ -154,5 +154,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-Christopher Granabetter Ifa - UVIE  
+Christopher Granabetter IfA - UVIE  
 November 2025
