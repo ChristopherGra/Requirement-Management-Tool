@@ -1,8 +1,5 @@
 # Requirements Management Tool - Core Dependencies
 # Updated: November 18, 2025
-#
-# This tool processes requirement documents from Excel, CSV, and PDF formats
-# into a unified DOORS-compatible structure.
 
 # Data Processing
 pandas>=2.2.0,<3.0.0      # DataFrame operations, Excel/CSV processing
