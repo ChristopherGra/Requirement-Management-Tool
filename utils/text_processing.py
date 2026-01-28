@@ -76,6 +76,9 @@ def clean_cell_value(value):
     
     # Normalize Unicode characters
     text = normalize_unicode_text(text)
+
+    # Replace _x000D_ with actual line breaks
+    text = text.replace('_x000D_', '')
     
     return text
 
