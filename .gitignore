@@ -3,6 +3,7 @@ rm_env/
 __pycache__/
 .vscode/
 dev_scripts/
+processors/performance_test.py
 
 # Runtime Artifacts
 .cache/
