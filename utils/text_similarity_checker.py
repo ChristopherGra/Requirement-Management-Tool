@@ -31,8 +31,6 @@ import numpy as np
 from pathlib import Path
 from typing import List, Dict, Optional
 
-from ai_call import compute_text_similarity
-
 def clean_text(text: Optional[str]) -> str:
     """
     Clean text for better comparison by normalizing whitespace and case.
