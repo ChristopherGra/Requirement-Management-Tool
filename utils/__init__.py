@@ -21,6 +21,7 @@ from .io_helpers import (
     debug_input,
     detect_file_type,
     get_output_path,
+    load_env,
 )
 from .base_processor import (
     Requirement,
@@ -46,6 +47,7 @@ __all__ = [
     'debug_input',
     'detect_file_type',
     'get_output_path',
+    'load_env',
     # Base classes
     'Requirement',
     'BaseProcessor',

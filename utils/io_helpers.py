@@ -7,6 +7,29 @@ from pathlib import Path
 from utils.constants import DEBUG_MODE, DEBUG_RESPONSES
 
 
+def load_env(env_path: str = ".env") -> None:
+    """
+    Load key=value pairs from a .env file into os.environ.
+
+    Skips blank lines and comments (lines starting with #).
+    Values are stripped but not quoted-unquoted.
+
+    Args:
+        env_path: Path to the .env file (default: project root .env)
+    """
+    path = Path(env_path)
+    if not path.exists():
+        return
+    with path.open() as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip())
+
+
 def debug_input(prompt, debug_key=None):
     """
     Testable input function that supports debug mode.

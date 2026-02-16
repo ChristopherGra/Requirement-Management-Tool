@@ -5,6 +5,9 @@ __pycache__/
 dev_scripts/
 processors/performance_test.py
 
+# Environment Files
+.env
+
 # Runtime Artifacts
 .cache/
 ~$*
