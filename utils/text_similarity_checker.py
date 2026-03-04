@@ -296,6 +296,19 @@ def load_toplevel_data(file_path: Path, id_column: str = 'Requirement ID',
     
     return toplevel_data
 
+def semantic_similarity(text1: str, text2: str) -> float:
+    from semantic_text_similarity.models import WebBertSimilarity
+    from semantic_text_similarity.models import ClinicalBertSimilarity
+
+    web_model = WebBertSimilarity(device='cpu', batch_size=10) #defaults to GPU prediction
+
+    clinical_model = ClinicalBertSimilarity(device='cuda', batch_size=10) #defaults to GPU prediction
+
+    web_similarity = web_model.predict(([text1], [text2]))
+    clinical_similarity = clinical_model.predict(([text1], [text2]))
+
+    print(f"WebBert similarity: {web_similarity[0]:.3f}")
+    print(f"ClinicalBert similarity: {clinical_similarity[0]:.3f}")
 
 def analyze_text_similarity(req_data: List[Dict[str, str]], 
                           toplevel_data: List[Dict[str, str]],
@@ -346,6 +359,8 @@ def analyze_text_similarity(req_data: List[Dict[str, str]],
                 # else:
                 #     continue
                 #print(f"{similarity:.3f};{refined_similarity(req_item['text'], toplevel_item['text'])}")
+
+                semantic_similarity(req_item['text'], toplevel_item['text'])
 
                 ai_similarity = 0
                 debug_file.write(f"{req_item['id']};{toplevel_item['id']};{similarity:.3f};{';'.join(map(str, refined_similarity_result))};{req_item['text'].replace(';', ',')};{toplevel_item['text'].replace(';', ',')};{ai_similarity:.3f}\n")
