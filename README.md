@@ -1,6 +1,6 @@
  # Requirements Management Tool
 
-A modular Python tool that processes requirement documents from various formats (Excel, CSV, PDF) and standardizes them into a unified 16-column DOORS-compatible structure.
+A modular Python tool that processes requirement documents from various formats (Excel, CSV, PDF) and standardizes them into a unified 17-column DOORS-compatible structure.
 
 ## Status
 
@@ -73,26 +73,27 @@ RM/
     └── pdf_processor.py        # PDF parser
 ```
 
-## 16-Column DOORS Schema
+## 17-Column DOORS Schema
 
 | Column | Description |
 |--------|-------------|
-| Parent ID | Parent requirement identifier |
-| Requirement ID | Unique requirement identifier |
+| ParentID | Parent requirement identifier |
+| RequirementID | Unique requirement identifier |
 | Type | Requirement type (Functional, Non-Functional, etc.) |
-| Sub-Type | Requirement sub-classification |
+| SubType | Requirement sub-classification |
 | Title | Short requirement title |
 | Definition | Full requirement description |
 | Notes | Implementation notes |
 | Remarks | Review comments |
 | Responsibility | Responsible team/person |
+| SubSystemApplicability | Sub-system applicability |
 | Applicability | Where requirement applies |
 | Compliance | Compliance status (C/NC/PC) |
-| Compliance Notes | Compliance details |
+| ComplianceNotes | Compliance details |
 | Verification | Verification method (Test, Review, Demo, etc.) |
-| Verification Notes | Verification details |
-| Reference Document | Source document reference |
-| Original ESA Identifier | Original ESA requirement ID |
+| VerificationNotes | Verification details |
+| ReferenceDocument | Source document reference |
+| OriginalESAIdentifier | Original ESA requirement ID |
 
 ## Usage Examples
 
@@ -105,8 +106,8 @@ Column 'req id' could not be automatically mapped.
 
 Available target columns:
   (Dimmed = already assigned)
-  1. Parent ID             5. Definition            9. Compliance           13. Verification Notes
-  2. Requirement ID        6. Notes                10. Compliance Notes    14. Reference Document
+  1. ParentID              5. Definition            9. Compliance           13. VerificationNotes
+  2. RequirementID         6. Notes                10. ComplianceNotes     14. ReferenceDocument
   ...
 
 Enter target column name/number for 'req id' (or 'skip' to ignore): 2

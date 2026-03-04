@@ -17,7 +17,7 @@ from utils.text_processing import clean_cell_value
 @dataclass
 class Requirement:
     """
-    Unified requirement model matching DOORS 16-column schema.
+    Unified requirement model matching DOORS 17-column schema.
     
     All processors convert their inputs to this common format.
     """
@@ -30,6 +30,7 @@ class Requirement:
     notes: str = ""
     remarks: str = ""
     responsibility: str = ""
+    subsystem_applicability: str = ""
     applicability: str = ""
     compliance: str = ""
     compliance_notes: str = ""
@@ -41,22 +42,23 @@ class Requirement:
     def to_dict(self):
         """Convert to dictionary with proper column names."""
         return {
-            "Parent ID": self.parent_id,
-            "Requirement ID": self.requirement_id,
+            "ParentID": self.parent_id,
+            "RequirementID": self.requirement_id,
             "Type": self.type,
-            "Sub-Type": self.sub_type,
+            "SubType": self.sub_type,
             "Title": self.title,
             "Definition": self.definition,
             "Notes": self.notes,
             "Remarks": self.remarks,
             "Responsibility": self.responsibility,
+            "SubSysApplicability": self.subsystem_applicability,
             "Applicability": self.applicability,
             "Compliance": self.compliance,
-            "Compliance Notes": self.compliance_notes,
+            "ComplianceNotes": self.compliance_notes,
             "Verification": self.verification,
-            "Verification Notes": self.verification_notes,
-            "Reference Document": self.reference_document,
-            "Original ESA Identifier": self.original_esa_identifier,
+            "VerificationNotes": self.verification_notes,
+            "ReferenceDocument": self.reference_document,
+            "OriginalESAIdentifier": self.original_esa_identifier,
         }
 
 
@@ -225,22 +227,23 @@ def generate_template(output_path: Path):
     
     # Add one sample row to show structure
     sample_row = {
-        "Parent ID": "REQ-001",
-        "Requirement ID": "REQ-001-01",
+        "ParentID": "REQ-001",
+        "RequirementID": "REQ-001-01",
         "Type": "Functional",
-        "Sub-Type": "Performance",
+        "SubType": "Performance",
         "Title": "Sample Requirement Title",
         "Definition": "The system shall perform X within Y timeframe.",
         "Notes": "Additional implementation notes",
         "Remarks": "Review comments",
         "Responsibility": "Engineering Team",
+        "SubSysApplicability": "",
         "Applicability": "All subsystems",
         "Compliance": "C",
-        "Compliance Notes": "Fully compliant",
+        "ComplianceNotes": "Fully compliant",
         "Verification": "Test",
-        "Verification Notes": "Verified by unit test",
-        "Reference Document": "REF-DOC-001",
-        "Original ESA Identifier": "ESA-REQ-001",
+        "VerificationNotes": "Verified by unit test",
+        "ReferenceDocument": "REF-DOC-001",
+        "OriginalESAIdentifier": "ESA-REQ-001",
     }
     df = pd.concat([df, pd.DataFrame([sample_row])], ignore_index=True)
     
