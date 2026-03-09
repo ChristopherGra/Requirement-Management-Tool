@@ -3,6 +3,11 @@ rm_env/
 __pycache__/
 .vscode/
 dev_scripts/
+tests/
+.pytest_cache/
+
+# local configuration filess
+.env
 
 # Runtime Artifacts
 .cache/
@@ -14,11 +19,14 @@ INTERNAL_DOCS*
 # GitHub Workflows
 .github
 
+# Processors
+processors/
+!processors/excel_processor.py
+!processors/pdf_processor.py
+
 # Data Directories
 archive/
-requirement_documents/*.pdf
-requirement_documents/*.xlsm
-requirement_documents/*.xlsx
+requirement_documents/*
 output/*.csv
 
 # Sample Files (keep these)
@@ -31,3 +39,6 @@ output/*.csv
 
 # Legacy Files
 requirement_template_gen1*
+
+# Debug files
+*debug*
