@@ -1,6 +1,6 @@
  # Requirements Management Tool
 
-A modular Python tool that processes requirement documents from various formats (Excel, CSV, PDF) and standardizes them into a unified 17-column DOORS-compatible structure.
+A modular Python tool that processes requirement documents from various formats (Excel, CSV, PDF) and standardizes them into a unified 18-column DOORS-compatible structure.
 
 ## Status
 
@@ -73,7 +73,7 @@ RM/
     └── pdf_processor.py        # PDF parser
 ```
 
-## 17-Column DOORS Schema
+## 18-Column DOORS Schema
 
 | Column | Description |
 |--------|-------------|
@@ -94,6 +94,7 @@ RM/
 | VerificationNotes | Verification details |
 | ReferenceDocument | Source document reference |
 | OriginalESAIdentifier | Original ESA requirement ID |
+| UpdatesMade | Record of updates/changes made |
 
 ## Usage Examples
 

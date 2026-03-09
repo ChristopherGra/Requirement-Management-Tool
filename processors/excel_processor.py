@@ -288,10 +288,10 @@ class ExcelProcessor(BaseProcessor):
         print(f"  {DIM}(Dimmed = already assigned){RESET}")
         
         # Display columns in 4-column grid
-        cols_per_row = 4
-        for row_idx in range(0, cols_per_row):
+        rows_per_col = 6
+        for row_idx in range(0, rows_per_col):
             row_items = []
-            for col_idx in range(0, len(COLUMNS), cols_per_row):
+            for col_idx in range(0, len(COLUMNS), rows_per_col):
                 if row_idx + col_idx < len(COLUMNS):
                     col_num = row_idx + col_idx + 1
                     col_name = COLUMNS[row_idx + col_idx]
@@ -404,6 +404,7 @@ class ExcelProcessor(BaseProcessor):
                 verification_notes=row.get("VerificationNotes", ""),
                 reference_document=row.get("ReferenceDocument", ""),
                 original_esa_identifier=row.get("OriginalESAIdentifier", ""),
+                updates_made=row.get("UpdatesMade", ""),
             )
             requirements.append(req)
         

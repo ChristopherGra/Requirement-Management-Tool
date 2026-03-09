@@ -3,7 +3,7 @@ Shared constants for requirements processing.
 Contains column definitions, mappings, and normalization rules.
 """
 
-# Target column order and names (DOORS-compatible 17-column schema)
+# Target column order and names (DOORS-compatible 18-column schema)
 COLUMNS = [
     "ParentID",
     "RequirementID",
@@ -21,7 +21,8 @@ COLUMNS = [
     "Verification",
     "VerificationNotes",
     "ReferenceDocument",
-    "OriginalESAIdentifier"
+    "OriginalESAIdentifier",
+    "UpdatesMade"
 ]
 
 # Define how incoming columns map to target columns (case-insensitive keys)
@@ -71,6 +72,8 @@ COLUMN_MAPPING = {
     "orginal esa identifier": "OriginalESAIdentifier",  # Common typo
     "esa identifier": "OriginalESAIdentifier",
     "esa id": "OriginalESAIdentifier",
+    "updates made": "UpdatesMade",
+    "updates": "UpdatesMade",
 }
 
 # Compliance normalization mapping
