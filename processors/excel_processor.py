@@ -387,22 +387,23 @@ class ExcelProcessor(BaseProcessor):
         
         for _, row in df.iterrows():
             req = Requirement(
-                requirement_id=row.get("Requirement ID", ""),
-                parent_id=row.get("Parent ID", ""),
+                requirement_id=row.get("RequirementID", ""),
+                parent_id=row.get("ParentID", ""),
                 type=row.get("Type", ""),
-                sub_type=row.get("Sub-Type", ""),
+                sub_type=row.get("SubType", ""),
                 title=row.get("Title", ""),
                 definition=row.get("Definition", ""),
                 notes=row.get("Notes", ""),
                 remarks=row.get("Remarks", ""),
                 responsibility=row.get("Responsibility", ""),
+                subsystem_applicability=row.get("SubSysApplicability", ""),
                 applicability=row.get("Applicability", ""),
                 compliance=row.get("Compliance", ""),
-                compliance_notes=row.get("Compliance Notes", ""),
+                compliance_notes=row.get("ComplianceNotes", ""),
                 verification=row.get("Verification", ""),
-                verification_notes=row.get("Verification Notes", ""),
-                reference_document=row.get("Reference Document", ""),
-                original_esa_identifier=row.get("Original ESA Identifier", ""),
+                verification_notes=row.get("VerificationNotes", ""),
+                reference_document=row.get("ReferenceDocument", ""),
+                original_esa_identifier=row.get("OriginalESAIdentifier", ""),
             )
             requirements.append(req)
         
