@@ -288,7 +288,7 @@ class ExcelProcessor(BaseProcessor):
         print(f"  {DIM}(Dimmed = already assigned){RESET}")
         
         # Display columns in 4-column grid
-        cols_per_row = 3
+        cols_per_row = 4
         for row_idx in range(0, cols_per_row):
             row_items = []
             for col_idx in range(0, len(COLUMNS), cols_per_row):
