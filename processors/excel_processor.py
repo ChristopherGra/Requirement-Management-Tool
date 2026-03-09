@@ -404,7 +404,6 @@ class ExcelProcessor(BaseProcessor):
                 verification_notes=row.get("VerificationNotes", ""),
                 reference_document=row.get("ReferenceDocument", ""),
                 original_esa_identifier=row.get("OriginalESAIdentifier", ""),
-                updates_made=row.get("UpdatesMade", ""),
             )
             requirements.append(req)
         

@@ -17,7 +17,7 @@ from utils.text_processing import clean_cell_value
 @dataclass
 class Requirement:
     """
-    Unified requirement model matching DOORS 18-column schema.
+    Unified requirement model matching DOORS 17-column schema.
     
     All processors convert their inputs to this common format.
     """
@@ -38,7 +38,6 @@ class Requirement:
     verification_notes: str = ""
     reference_document: str = ""
     original_esa_identifier: str = ""
-    updates_made: str = ""
     
     def to_dict(self):
         """Convert to dictionary with proper column names."""
@@ -60,7 +59,6 @@ class Requirement:
             "VerificationNotes": self.verification_notes,
             "ReferenceDocument": self.reference_document,
             "OriginalESAIdentifier": self.original_esa_identifier,
-            "UpdatesMade": self.updates_made,
         }
 
 
@@ -246,7 +244,6 @@ def generate_template(output_path: Path):
         "VerificationNotes": "Verified by unit test",
         "ReferenceDocument": "REF-DOC-001",
         "OriginalESAIdentifier": "ESA-REQ-001",
-        "UpdatesMade": "",
     }
     df = pd.concat([df, pd.DataFrame([sample_row])], ignore_index=True)
     
