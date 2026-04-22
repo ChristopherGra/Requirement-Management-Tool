@@ -68,27 +68,48 @@ python3 requirements_processor.py --template templates/requirements_template.xls
 
 # Clear cache (reset user choices)
 python3 requirements_processor.py --clear-cache
+
+# Run tracer standalone
+python3 requirements_tracer.py -c example.cfg
+python3 requirements_tracer.py -c example.cfg -o output/custom/ --debug
+
+# Run text similarity check between two requirement CSVs
+python3 utils/text_similarity_checker.py text_similarity_input/test_child_requirements.csv text_similarity_input/test_parent_requirements.csv
 ```
 
 ## Architecture
 
 ```
 RM/
-├── requirements_cli.py          # Unified CLI: manage / trace / pipeline
-├── requirements_processor.py    # Normalization CLI entry point
-├── run_requirements_tracer.py   # Tracer CLI entry point
-├── utils/                       # Shared utilities
-│   ├── constants.py            # COLUMNS schema, mappings
-│   ├── text_processing.py     # Text normalization
-│   ├── io_helpers.py           # File I/O & user input
-│   ├── cache.py                # FileCache class
-│   └── base_processor.py       # BaseProcessor ABC
-├── processors/                  # File-type processors
-    ├── excel_processor.py      # Excel/CSV handler
-    └── pdf_processor.py        # PDF parser
-├── reqtracer/                   # Parent-child trace engine
-└── workflows/                   # Cross-tool orchestration
-  └── trace_pipeline.py       # Normalize-then-trace workflow
+├── requirements_cli.py              # Unified CLI: manage / trace / pipeline
+├── requirements_processor.py        # Normalization CLI entry point
+├── requirements_tracer.py           # Tracer CLI entry point
+├── example.cfg                      # Example tracer configuration
+├── .env.example                     # Environment variable template
+├── utils/                           # Shared utilities
+│   ├── constants.py                # COLUMNS schema, mappings
+│   ├── text_processing.py          # Text normalization
+│   ├── io_helpers.py               # File I/O & user input
+│   ├── cache.py                    # FileCache class
+│   ├── base_processor.py           # BaseProcessor ABC
+│   ├── text_similarity_checker.py  # Jaccard-based requirement similarity
+│   ├── eval_similarity.py          # Similarity result visualiser
+│   └── tracer/                     # Parent-child trace engine
+│       ├── config.py               # Config loader / TracerConfig
+│       ├── loader.py               # Requirement file loader
+│       ├── tracer.py               # RequirementsTracer core
+│       ├── exporter.py             # XLSX / debug export
+│       └── pipeline.py             # Normalize-then-trace workflow
+├── processors/                      # File-type processors
+│   ├── excel_processor.py          # Excel/CSV handler
+│   ├── pdf_processor.py            # PDF parser
+│   └── text_extraction_test.py     # PDF text extraction scratch pad
+├── requirement_documents/           # Sample input files
+│   ├── samples/                    # Single-file normalization examples
+│   └── Tracing_Examples/           # Multi-level tracing examples (L1–L5)
+├── text_similarity_input/           # Input CSVs for similarity checks
+└── templates/
+    └── requirements_template.xlsx  # DOORS-compatible output template
 ```
 
 ## Working Modes
@@ -100,6 +121,17 @@ The repository now has three intended entry modes:
 - `pipeline`: use one config-driven workflow that normalizes each configured source into `output/normalized_for_trace/` and then runs the tracer on those generated files.
 
 The standalone scripts remain valid. The unified CLI exists to make the repository feel like one tool instead of two disconnected ones.
+
+### Text Similarity
+
+(very early version)
+`utils/text_similarity_checker.py` compares two requirement CSV files using a Jaccard similarity coefficient with length balancing. Place input files in `text_similarity_input/` and run:
+
+```bash
+python3 utils/text_similarity_checker.py text_similarity_input/test_child_requirements.csv text_similarity_input/test_parent_requirements.csv
+```
+
+`utils/eval_similarity.py` reads a previously generated similarity debug CSV and plots the similarity scores.
 
 ## 18-Column DOORS Schema
 
