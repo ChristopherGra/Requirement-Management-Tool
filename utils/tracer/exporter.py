@@ -73,7 +73,10 @@ def export_ancestry_xlsx(tracer, ancestry: Dict, output_path: str) -> None:
 
     df = pd.DataFrame(rows, columns=all_columns)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    df.to_excel(output_path, index=False)
+    if output_path.endswith(".csv"):
+        df.to_csv(output_path, index=False, sep=";")
+    else:
+        df.to_excel(output_path, index=False)
     log.info("Ancestry trace exported to '%s' (%d rows)", output_path, len(df))
 
 

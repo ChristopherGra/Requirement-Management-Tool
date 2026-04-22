@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import configparser
 import logging
-import re
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 from requirements_processor import process_single_file
-from utils.tracer.config import SourceEntry, TracerConfig, load_config
+from utils.tracer.config import SourceEntry, TracerConfig, load_config, slugify_label
 from requirements_tracer import run_trace
 from utils import FileCache
 
@@ -68,7 +67,7 @@ def _build_generated_config(
     def normalize_entry(entry: SourceEntry) -> SourceEntry:
         key = (entry.filepath, entry.sheet)
         if key not in normalized_sources:
-            output_path = normalized_dir / f"{_slugify_label(entry.label)}_normalized.xlsx"
+            output_path = normalized_dir / f"{slugify_label(entry.label)}_normalized.xlsx"
             log.info(
                 "Normalizing source '%s' from %s%s",
                 entry.label,
@@ -131,8 +130,3 @@ def write_generated_trace_config(output_path: Path, config: TracerConfig) -> Non
     with output_path.open("w", encoding="utf-8") as file_handle:
         parser.write(file_handle)
 
-
-def _slugify_label(label: str) -> str:
-    """Convert a trace label into a filesystem-safe stem."""
-    slug = re.sub(r"[^A-Za-z0-9]+", "_", label.strip()).strip("_")
-    return slug.lower() or "source"

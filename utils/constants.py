@@ -51,6 +51,8 @@ COLUMN_MAPPING = {
     "responsibility": "Responsibility",
     "responsible": "Responsibility",
     "owner": "Responsibility",
+    "subsysapplicability": "SubSysApplicability",
+    "subsys applicability": "SubSysApplicability",
     "applicability": "SubSysApplicability",
     "applicable": "SubSysApplicability",
     "verification": "Verification",

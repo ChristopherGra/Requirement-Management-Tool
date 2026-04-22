@@ -1,5 +1,6 @@
 import configparser
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
@@ -94,3 +95,9 @@ def _validate_config(config: TracerConfig) -> None:
         raise ValueError("No [sources] defined in config file.")
     if not config.hierarchy:
         raise ValueError("No [hierarchy] order defined in config file.")
+
+
+def slugify_label(label: str) -> str:
+    """Convert a config label into a filesystem-safe stem."""
+    slug = re.sub(r"[^A-Za-z0-9]+", "_", label.strip()).strip("_")
+    return slug.lower() or "source"

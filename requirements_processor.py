@@ -24,6 +24,7 @@ import pandas as pd
 
 from utils import FileCache, detect_file_type, get_output_path, generate_template
 from processors import ExcelProcessor, PDFProcessor
+from utils.tracer.config import load_config, slugify_label
 
 
 def get_processor(file_path: Path, cache: FileCache):
@@ -182,6 +183,54 @@ def process_batch(
     print(f"BATCH COMPLETE: {success_count}/{len(files)} files processed")
 
 
+def process_from_config(
+    cfg_path: Path,
+    cache: Optional[FileCache] = None,
+    output_dir: Optional[Path] = None,
+) -> int:
+    """Process all configured sources from a tracer-style .cfg file."""
+    if cache is None:
+        cache = FileCache()
+
+    config = load_config(str(cfg_path))
+
+    resolved_output_dir = Path(output_dir or config.output_dir)
+    if not resolved_output_dir.is_absolute():
+        resolved_output_dir = (cfg_path.parent / resolved_output_dir).resolve()
+    resolved_output_dir.mkdir(parents=True, exist_ok=True)
+
+    entries = list(config.sources) + list(config.extra_links)
+    seen_stems = {}
+    success_count = 0
+
+    print(f"\n{'-'*60}")
+    print(f"CFG PROCESSING: {cfg_path}")
+    print(f"Output directory: {resolved_output_dir}")
+    print(f"Configured sources: {len(entries)}")
+    print(f"{'-'*60}\n")
+
+    for entry in entries:
+        stem = slugify_label(entry.label)
+        seen_stems[stem] = seen_stems.get(stem, 0) + 1
+        suffix = "" if seen_stems[stem] == 1 else f"_{seen_stems[stem]}"
+        output_path = resolved_output_dir / f"{stem}{suffix}_normalized.xlsx"
+
+        try:
+            if process_single_file(
+                Path(entry.filepath),
+                output_path=output_path,
+                cache=cache,
+                sheet_name=entry.sheet,
+            ):
+                success_count += 1
+        except Exception as e:
+            print(f"Error processing source '{entry.label}': {e}")
+            continue
+
+    print(f"CFG COMPLETE: {success_count}/{len(entries)} sources processed")
+    return 0 if success_count == len(entries) else 1
+
+
 def main(argv: Optional[Sequence[str]] = None):
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -191,6 +240,9 @@ def main(argv: Optional[Sequence[str]] = None):
 Examples:
   # Process a single PDF file
   %(prog)s requirement_documents/sample.pdf
+
+  # Process all sources from a config file
+  %(prog)s -c example.cfg
   
   # Process Excel file with custom output
   %(prog)s archive/requirements.xlsx -o output/normalized.csv
@@ -215,6 +267,12 @@ Examples:
         nargs='?',
         type=Path,
         help='Input file path (or use --batch for directory processing)'
+    )
+
+    parser.add_argument(
+        '-c', '--config',
+        type=Path,
+        help='Process all configured sources from a .cfg file'
     )
     
     # Output path
@@ -276,6 +334,23 @@ Examples:
         print(f"Generating template: {args.template}")
         generate_template(args.template)
         return 0
+
+    # Handle config processing
+    if args.config:
+        if args.input:
+            print("Error: Cannot use input file and --config together")
+            return 1
+        if args.batch:
+            print("Error: Cannot use --batch and --config together")
+            return 1
+        if not args.config.exists():
+            print(f"Error: {args.config} does not exist")
+            return 1
+        if args.config.suffix.lower() != '.cfg':
+            print(f"Error: {args.config} is not a .cfg file")
+            return 1
+
+        return process_from_config(args.config, cache, args.output)
     
     # Handle batch processing
     if args.batch:
