@@ -18,7 +18,9 @@ Date: November 2025
 import sys
 import argparse
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Sequence, Tuple
+
+import pandas as pd
 
 from utils import FileCache, detect_file_type, get_output_path, generate_template
 from processors import ExcelProcessor, PDFProcessor
@@ -51,7 +53,8 @@ def get_processor(file_path: Path, cache: FileCache):
 def process_single_file(
     input_path: Path,
     output_path: Optional[Path] = None,
-    cache: Optional[FileCache] = None
+    cache: Optional[FileCache] = None,
+    sheet_name: Optional[str] = None,
 ):
     """
     Process a single requirements file.
@@ -68,22 +71,16 @@ def process_single_file(
     print(f"Processing: {input_path.name}")
     print(f"{'-'*60}")
     
-    # Get appropriate processor
-    try:
-        processor = get_processor(input_path, cache)
-    except ValueError as e:
-        print(f"Error: {e}")
+    # Extract and normalize requirements
+    normalized = normalize_input_file(
+        input_path,
+        cache=cache,
+        sheet_name=sheet_name,
+    )
+    if normalized is None:
         return False
-    
-    # Extract requirements
-    requirements = processor.extract_requirements(input_path)
+    requirements, df, processor = normalized
     print(f"\nExtracted {len(requirements)} requirements")
-    
-    # Convert to DataFrame
-    df = processor.requirements_to_dataframe(requirements)
-    
-    # Normalize
-    df = processor.normalize_dataframe(df)
     
     # Determine output path
     if output_path is None:
@@ -94,6 +91,39 @@ def process_single_file(
     
     print(f"{'-'*60}\n")
     return True
+
+
+def normalize_input_file(
+    input_path: Path,
+    cache: Optional[FileCache] = None,
+    sheet_name: Optional[str] = None,
+) -> Optional[Tuple[List[object], pd.DataFrame, object]]:
+    """Return normalized requirements and dataframe for a single input file."""
+    if cache is None:
+        cache = FileCache()
+
+    try:
+        processor = get_processor(input_path, cache)
+    except ValueError as e:
+        print(f"Error: {e}")
+        return None
+
+    requirements = _extract_requirements(processor, input_path, sheet_name)
+    df = processor.requirements_to_dataframe(requirements)
+    df = processor.normalize_dataframe(df)
+    return requirements, df, processor
+
+
+def _extract_requirements(processor, input_path: Path, sheet_name: Optional[str] = None):
+    """Extract requirements from a source, honoring explicit Excel sheet selection."""
+    if isinstance(processor, ExcelProcessor):
+        return processor.extract_requirements(input_path, sheet_name=sheet_name)
+
+    if sheet_name:
+        print(
+            f"Ignoring sheet override '{sheet_name}' for non-spreadsheet file: {input_path}"
+        )
+    return processor.extract_requirements(input_path)
 
 
 def process_batch(
@@ -152,7 +182,7 @@ def process_batch(
     print(f"BATCH COMPLETE: {success_count}/{len(files)} files processed")
 
 
-def main():
+def main(argv: Optional[Sequence[str]] = None):
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description='Process requirements from Excel/CSV/PDF files',
@@ -230,7 +260,7 @@ Examples:
         help='Enable verbose output'
     )
     
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     
     # Initialize cache
     cache = FileCache()

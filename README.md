@@ -1,6 +1,6 @@
- # Requirements Management Tool
+# Requirements Management Tool
 
-A modular Python tool that processes requirement documents from various formats (Excel, CSV, PDF) and standardizes them into a unified 18-column DOORS-compatible structure.
+A modular Python project for normalizing requirement documents and tracing parent-child relationships across the normalized outputs. The repository now exposes one cohesive workflow while keeping the normalization and tracer subsystems separately usable.
 
 ## Status
 
@@ -19,6 +19,7 @@ A modular Python tool that processes requirement documents from various formats 
 - **Text Normalization**: Unicode normalization and compliance value standardization (C/NC/PC)
 - **Batch Processing**: Process entire directories with file type filtering
 - **DOORS Integration**: Export to DOORS-compatible CSV (semicolon delimiter) or Excel
+- **Integrated Trace Workflow**: Normalize configured sources first, then run the tracer against the generated normalized files
 
 ## Installation
 
@@ -38,6 +39,18 @@ pip install -r requirements.txt
 ## Quick Start
 
 ```bash
+# Unified entry point
+python3 requirements_cli.py --help
+
+# Run only normalization
+python3 requirements_cli.py manage input.xlsx
+
+# Run only tracing
+python3 requirements_cli.py trace --config example.cfg
+
+# Run normalize -> trace as one workflow
+python3 requirements_cli.py pipeline --config example.cfg
+
 # Process a single file
 python3 requirements_processor.py input.xlsx
 
@@ -61,17 +74,32 @@ python3 requirements_processor.py --clear-cache
 
 ```
 RM/
-├── requirements_processor.py    # CLI entry point
+├── requirements_cli.py          # Unified CLI: manage / trace / pipeline
+├── requirements_processor.py    # Normalization CLI entry point
+├── run_requirements_tracer.py   # Tracer CLI entry point
 ├── utils/                       # Shared utilities
 │   ├── constants.py            # COLUMNS schema, mappings
 │   ├── text_processing.py     # Text normalization
 │   ├── io_helpers.py           # File I/O & user input
 │   ├── cache.py                # FileCache class
 │   └── base_processor.py       # BaseProcessor ABC
-└── processors/                  # File-type processors
+├── processors/                  # File-type processors
     ├── excel_processor.py      # Excel/CSV handler
     └── pdf_processor.py        # PDF parser
+├── reqtracer/                   # Parent-child trace engine
+└── workflows/                   # Cross-tool orchestration
+  └── trace_pipeline.py       # Normalize-then-trace workflow
 ```
+
+## Working Modes
+
+The repository now has three intended entry modes:
+
+- `manage`: use only the normalization tool and export DOORS-ready files.
+- `trace`: use only the tracing tool against already normalized files.
+- `pipeline`: use one config-driven workflow that normalizes each configured source into `output/normalized_for_trace/` and then runs the tracer on those generated files.
+
+The standalone scripts remain valid. The unified CLI exists to make the repository feel like one tool instead of two disconnected ones.
 
 ## 18-Column DOORS Schema
 
@@ -140,6 +168,27 @@ User choices are cached in `.cache/file_processing_cache.json`:
 Cache automatically invalidates when files are modified (mtime/size change).
 
 Manual cache clear: `python3 requirements_processor.py --clear-cache`
+
+## Trace Pipeline
+
+The integrated pipeline reuses the existing tracer `.cfg` file format. For each configured source and extra-link source, it:
+
+1. Normalizes the raw input with the management tool.
+2. Writes the normalized intermediate files to a dedicated folder.
+3. Generates a reproducible config snapshot for those normalized files.
+4. Runs the tracer on the generated normalized inputs.
+
+Example:
+
+```bash
+python3 requirements_cli.py pipeline --config example.cfg --output-dir output
+```
+
+Generated artifacts:
+
+- `output/normalized_for_trace/*.xlsx`: normalized intermediate files used by tracing
+- `output/normalized_for_trace/trace_pipeline.generated.cfg`: generated tracer config referencing those files
+- `output/ancestry_trace.xlsx`: final trace export
 
 
 ## License

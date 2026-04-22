@@ -25,12 +25,17 @@ class ExcelProcessor(BaseProcessor):
     - Cache previous user choices
     """
     
-    def extract_requirements(self, input_path: Path) -> List[Requirement]:
+    def extract_requirements(
+        self,
+        input_path: Path,
+        sheet_name: Optional[str] = None,
+    ) -> List[Requirement]:
         """
         Extract requirements from Excel/CSV file.
         
         Args:
             input_path: Path to .xlsx, .xls, .xlsm, or .csv file
+            sheet_name: Optional sheet override for Excel files
             
         Returns:
             List of Requirement objects
@@ -38,7 +43,7 @@ class ExcelProcessor(BaseProcessor):
         input_path = Path(input_path)
         
         # Load DataFrame with sheet selection if needed
-        df = self._load_spreadsheet(input_path)
+        df = self._load_spreadsheet(input_path, sheet_name=sheet_name)
         
         if df is None:
             return []
@@ -52,12 +57,17 @@ class ExcelProcessor(BaseProcessor):
         # Convert to Requirements
         return self._dataframe_to_requirements(df)
     
-    def _load_spreadsheet(self, input_path: Path) -> Union[pd.DataFrame, None]:
+    def _load_spreadsheet(
+        self,
+        input_path: Path,
+        sheet_name: Optional[str] = None,
+    ) -> Union[pd.DataFrame, None]:
         """
         Load spreadsheet with multi-sheet handling.
         
         Args:
             input_path: Path to file
+            sheet_name: Optional sheet override for Excel files
             
         Returns:
             DataFrame or None if unsupported type
@@ -65,15 +75,22 @@ class ExcelProcessor(BaseProcessor):
         ext = input_path.suffix.lower()
         
         if ext in [".xls", ".xlsx", ".xlsm"]:
-            result = self._load_excel_with_sheet_selection(input_path)
+            result = self._load_excel_with_sheet_selection(
+                input_path,
+                sheet_name=sheet_name,
+            )
             return result if result is not None else pd.DataFrame()
         elif ext == ".csv":
-            return pd.read_csv(input_path, encoding="utf-8")
+            return pd.read_csv(input_path, encoding="utf-8", quotechar='"', sep=";", engine='python', on_bad_lines='warn')
         else:
             print(f"Unsupported file type: {ext}")
             return pd.DataFrame()
     
-    def _load_excel_with_sheet_selection(self, input_path: Path) -> Optional[pd.DataFrame]:
+    def _load_excel_with_sheet_selection(
+        self,
+        input_path: Path,
+        sheet_name: Optional[str] = None,
+    ) -> Optional[pd.DataFrame]:
         """
         Load Excel file with interactive sheet selection if multiple sheets.
         
@@ -81,12 +98,22 @@ class ExcelProcessor(BaseProcessor):
         
         Args:
             input_path: Path to Excel file
+            sheet_name: Optional sheet override for non-interactive loading
             
         Returns:
             DataFrame from selected sheet or None if cancelled
         """
         excel_file = pd.ExcelFile(input_path)
         sheet_names : List[str] = [str(name) for name in excel_file.sheet_names]
+
+        if sheet_name:
+            if sheet_name not in sheet_names:
+                raise ValueError(
+                    f"Sheet '{sheet_name}' not found in {input_path}. "
+                    f"Available sheets: {sheet_names}"
+                )
+            print(f"\nUsing configured sheet selection: '{sheet_name}'")
+            return pd.read_excel(input_path, sheet_name=sheet_name)
         
         if len(sheet_names) == 1:
             # Only one sheet, read directly
