@@ -30,13 +30,16 @@ requirement_documents/*
 output/*.csv
 
 # Sample Files (keep these)
-!requirement_documents/sample_requirements_specification.pdf
-!requirement_documents/sample_requirements.csv
-!requirement_documents/sample_requirements.xlsx
-!requirement_documents/sample_requirements_alt_columns.csv
-!requirement_documents/sample_requirements_alt_columns.xlsx
-!output/sample*
-!requirement_documents/Tracing_Examples/*
+!requirement_documents/samples/sample_requirements_specification.pdf
+!requirement_documents/samples/sample_requirements.csv
+!requirement_documents/samples/sample_requirements.xlsx
+!requirement_documents/samples/sample_requirements_alt_columns.csv
+!requirement_documents/samples/sample_requirements_alt_columns.xlsx
+!requirement_documents/Tracing_Examples/Level1Reqs.xlsx
+!requirement_documents/Tracing_Examples/Level2Reqs.xlsx
+!requirement_documents/Tracing_Examples/Level3Reqs.csv
+!requirement_documents/Tracing_Examples/Level4Reqs.xlsx
+!requirement_documents/Tracing_Examples/Level5Reqs.xlsx
 
 # Legacy Files
 requirement_template_gen1*
