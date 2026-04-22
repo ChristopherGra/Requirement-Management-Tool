@@ -36,6 +36,7 @@ output/*.csv
 !requirement_documents/sample_requirements_alt_columns.csv
 !requirement_documents/sample_requirements_alt_columns.xlsx
 !output/sample*
+!requirement_documents/Tracing_Examples/*
 
 # Legacy Files
 requirement_template_gen1*
