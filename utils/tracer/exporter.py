@@ -10,14 +10,8 @@ from utils.constants import COLUMNS
 log = logging.getLogger(__name__)
 
 
-def export_ancestry_xlsx(tracer, ancestry: Dict, output_path: str) -> None:
-    """Export traced ancestry paths to an xlsx file.
-
-    Columns produced:
-      - Level -1 (External), Level 0 (<label>), ..., Level N (<label>)
-      - TopLevel_Definition  (definition of the closest ancestor in the path)
-      - All 18 DOORS schema columns for the leaf requirement
-    """
+def build_ancestry_dataframe(tracer, ancestry: Dict) -> pd.DataFrame:
+    """Build the ancestry export DataFrame before writing to disk."""
     level_col_names = ["Level -1 (External)"] + [
         f"Level {i} ({label})"
         for i, label in enumerate(tracer.file_hierarchy_order)
@@ -71,7 +65,18 @@ def export_ancestry_xlsx(tracer, ancestry: Dict, output_path: str) -> None:
 
             rows.append(row)
 
-    df = pd.DataFrame(rows, columns=all_columns)
+    return pd.DataFrame(rows, columns=all_columns)
+
+
+def export_ancestry_xlsx(tracer, ancestry: Dict, output_path: str) -> None:
+    """Export traced ancestry paths to an xlsx file.
+
+    Columns produced:
+      - Level -1 (External), Level 0 (<label>), ..., Level N (<label>)
+      - TopLevel_Definition  (definition of the closest ancestor in the path)
+      - All 18 DOORS schema columns for the leaf requirement
+    """
+    df = build_ancestry_dataframe(tracer, ancestry)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     if output_path.endswith(".csv"):
         df.to_csv(output_path, index=False, sep=";")

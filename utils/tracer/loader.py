@@ -76,6 +76,7 @@ def _load_sheet(excel_file: pd.ExcelFile, sheet_name: str, label: str) -> List[D
         .str.replace(r"\b(and|or|the|an?)\b", "", regex=True)
         .str.replace("(PRD TBD)", "", regex=False)
         .str.strip()
+        .str.replace(r" +", "\n", regex=True)
     )
 
     # Detect rows containing "deleted" in any column (except UpdatesMade, Definition)

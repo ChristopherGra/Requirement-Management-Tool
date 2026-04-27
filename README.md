@@ -38,6 +38,7 @@ pip install -r requirements.txt
 
 ## Quick Start
 
+### Complete Pipeline
 ```bash
 # Unified entry point
 python3 requirements_cli.py --help
@@ -46,11 +47,11 @@ python3 requirements_cli.py --help
 python3 requirements_cli.py manage input.xlsx
 
 # Run only tracing
-python3 requirements_cli.py trace --config example.cfg
+python3 requirements_cli.py trace --config output/normalized_for_trace/trace_pipeline.generated.cfg
+```
 
-# Run normalize -> trace as one workflow
-python3 requirements_cli.py pipeline --config example.cfg
-
+### Requirements Processor (Normalization)
+```bash
 # Process a single file
 python3 requirements_processor.py input.xlsx
 
@@ -68,166 +69,350 @@ python3 requirements_processor.py --template templates/requirements_template.xls
 
 # Clear cache (reset user choices)
 python3 requirements_processor.py --clear-cache
+```
 
+### Requirements Tracer (with normalized files)
+```bash
 # Run tracer standalone
-python3 requirements_tracer.py -c example.cfg
-python3 requirements_tracer.py -c example.cfg -o output/custom/ --debug
-
-# Run text similarity check between two requirement CSVs
-python3 utils/text_similarity_checker.py text_similarity_input/test_child_requirements.csv text_similarity_input/test_parent_requirements.csv
+python3 requirements_tracer.py -c output/normalized_for_trace/trace_pipeline.generated.cfg
+python3 requirements_tracer.py -c output/normalized_for_trace/trace_pipeline.generated.cfg -o output/custom/ --debug
 ```
 
-## Architecture
+## Repository Layout
 
-```
+```text
 RM/
 ├── requirements_cli.py              # Unified CLI: manage / trace / pipeline
 ├── requirements_processor.py        # Normalization CLI entry point
 ├── requirements_tracer.py           # Tracer CLI entry point
 ├── example.cfg                      # Example tracer configuration
-├── .env.example                     # Environment variable template
-├── utils/                           # Shared utilities
-│   ├── constants.py                # COLUMNS schema, mappings
-│   ├── text_processing.py          # Text normalization
-│   ├── io_helpers.py               # File I/O & user input
-│   ├── cache.py                    # FileCache class
-│   ├── base_processor.py           # BaseProcessor ABC
-│   ├── text_similarity_checker.py  # Jaccard-based requirement similarity
-│   ├── eval_similarity.py          # Similarity result visualiser
-│   └── tracer/                     # Parent-child trace engine
-│       ├── config.py               # Config loader / TracerConfig
-│       ├── loader.py               # Requirement file loader
-│       ├── tracer.py               # RequirementsTracer core
-│       ├── exporter.py             # XLSX / debug export
-│       └── pipeline.py             # Normalize-then-trace workflow
-├── processors/                      # File-type processors
-│   ├── excel_processor.py          # Excel/CSV handler
-│   ├── pdf_processor.py            # PDF parser
-│   └── text_extraction_test.py     # PDF text extraction scratch pad
-├── requirement_documents/           # Sample input files
-│   ├── samples/                    # Single-file normalization examples
-│   └── Tracing_Examples/           # Multi-level tracing examples (L1–L5)
-├── text_similarity_input/           # Input CSVs for similarity checks
-└── templates/
-    └── requirements_template.xlsx  # DOORS-compatible output template
+├── utils/
+│   ├── base_processor.py            # Shared processor base class + template generation
+│   ├── cache.py                     # FileCache implementation
+│   ├── constants.py                 # DOORS schema, column mapping, compliance mapping
+│   ├── io_helpers.py                # Input/output helpers and prompts
+│   ├── text_processing.py           # Text normalization helpers
+│   ├── text_similarity_checker.py   # CSV similarity checker
+│   ├── eval_similarity.py           # Similarity result evaluation helpers
+│   └── tracer/
+│       ├── config.py                # .cfg parser and tracer config model
+│       ├── loader.py                # Requirement loading for trace inputs
+│       ├── tracer.py                # Core ancestry tracing engine
+│       ├── exporter.py              # Trace export and debug file writing
+│       └── pipeline.py              # Normalize-then-trace orchestration
+├── processors/
+│   ├── excel_processor.py           # Excel and CSV normalization
+│   ├── pdf_processor.py             # Keyword-based PDF normalization
+│   └── text_extraction_test.py      # Text Extraction test script
+├── requirement_documents/           # Example and project input documents
+├── templates/
+│   └── requirement_template_gen1.csv
+└── output/                          # Generated outputs, normalized intermediates, trace exports
 ```
 
-## Working Modes
+## Three Entry Points
 
-The repository now has three intended entry modes:
+### 1. `requirements_cli.py`
 
-- `manage`: use only the normalization tool and export DOORS-ready files.
-- `trace`: use only the tracing tool against already normalized files.
-- `pipeline`: use one config-driven workflow that normalizes each configured source into `output/normalized_for_trace/` and then runs the tracer on those generated files.
-
-The standalone scripts remain valid. The unified CLI exists to make the repository feel like one tool instead of two disconnected ones.
-
-### Text Similarity
-
-(very early version)
-`utils/text_similarity_checker.py` compares two requirement CSV files using a Jaccard similarity coefficient with length balancing. Place input files in `text_similarity_input/` and run:
+Unified entry point for the whole repository.
 
 ```bash
-python3 utils/text_similarity_checker.py text_similarity_input/test_child_requirements.csv text_similarity_input/test_parent_requirements.csv
+python requirements_cli.py manage ...
+python requirements_cli.py trace ...
+python requirements_cli.py pipeline -c example.cfg
 ```
 
-`utils/eval_similarity.py` reads a previously generated similarity debug CSV and plots the similarity scores.
+Use this when you want one stable command surface for both normalization and tracing.
+
+Subcommands:
+
+| Command | Purpose |
+|---------|---------|
+| `manage` | Passes arguments through to `requirements_processor.py` |
+| `trace` | Passes arguments through to `requirements_tracer.py` |
+| `pipeline` | Normalizes configured sources, writes normalized intermediates, then runs the tracer |
+
+Pipeline-specific options:
+
+| Flag | Description |
+|------|-------------|
+| `-c`, `--config` | Required tracer config file |
+| `-o`, `--output-dir` | Override the trace output directory |
+| `--normalized-dir` | Override where normalized intermediates are written |
+| `--debug` | Force tracer debug file output |
+| `--no-filter` | Export all ancestry rows instead of only leaf rows |
+| `-v`, `--verbose` | Enable INFO/DEBUG logging |
+
+Examples:
+
+```bash
+python requirements_cli.py manage requirement_documents/samples/sample_requirements.csv
+python requirements_cli.py trace -c example.cfg --debug
+python requirements_cli.py pipeline -c example.cfg --output-dir output --normalized-dir output/normalized_for_trace -v
+```
+
+### 2. `requirements_processor.py`
+
+Standalone normalization entry point. Use this when you only need to convert source documents into the DOORS schema.
+
+Supported modes:
+
+- Process a single file.
+- Process all matching files in a directory.
+- Process all sources declared in a tracer `.cfg` file.
+- Generate a blank template file.
+- Clear cached interactive choices.
+
+Examples:
+
+```bash
+# Single file
+python requirements_processor.py requirement_documents/samples/sample_requirements.csv
+
+# Custom output path
+python requirements_processor.py requirement_documents/samples/sample_requirements.csv -o output/sample_normalized.xlsx
+
+# Batch processing
+python requirements_processor.py --batch requirement_documents/samples/
+python requirements_processor.py --batch requirement_documents/ --type pdf
+
+# Normalize all sources declared in a config file
+python requirements_processor.py -c example.cfg -o output/normalized_from_cfg
+
+# Generate a template
+python requirements_processor.py --template templates/requirement_template_gen1.csv
+
+# Clear cache
+python requirements_processor.py --clear-cache
+```
+
+Standalone processor options:
+
+| Flag | Description |
+|------|-------------|
+| `input` | Optional single input file |
+| `-c`, `--config` | Normalize all sources declared in a `.cfg` file |
+| `-o`, `--output` | Output file for single-file mode, or output directory for config mode |
+| `--batch` | Process all supported files in a directory |
+| `--type` | Filter batch mode by `all`, `pdf`, `excel`, or `csv` |
+| `--template` | Generate a blank template file |
+| `--clear-cache` | Clear `.cache/file_processing_cache.json` |
+| `-v`, `--verbose` | Enable verbose output |
+
+How normalization behaves:
+
+- Excel and CSV files use the Excel processor.
+- PDF files use the PDF processor.
+- Unmapped columns trigger an interactive mapping prompt.
+- Multi-sheet Excel files prompt for a sheet if one is not specified.
+- Text is cleaned and compliance values are normalized to `C`, `NC`, or `PC` when possible.
+- Outputs preserve the project-standard 18-column order.
+
+### 3. `requirements_tracer.py`
+
+Standalone tracing entry point. Use this when your requirement sources are already prepared for tracing or when you want direct control over trace execution without the normalization step.
+
+Examples:
+
+```bash
+python requirements_tracer.py -c example.cfg
+python requirements_tracer.py -c example.cfg -o output/custom/
+python requirements_tracer.py -c example.cfg --debug
+python requirements_tracer.py -c example.cfg --no-filter -v
+```
+
+Standalone tracer options:
+
+| Flag | Description |
+|------|-------------|
+| `-c`, `--config` | Required tracer configuration file |
+| `-o`, `--output-dir` | Override the output directory from config |
+| `--debug` | Force debug JSON file output |
+| `--no-filter` | Skip redundant-ancestry filtering |
+| `-v`, `--verbose` | Enable DEBUG-level logging |
+
+## Tracer Configuration Format
+
+The tracer and the pipeline share the same `.cfg` file format. Paths resolve relative to the config file location.
+
+```ini
+[general]
+output_dir = output
+debug = false
+
+[sources]
+# label = filepath [:: sheet_name]
+Level 1 Req = requirement_documents/Tracing_Examples/Level1Reqs.xlsx
+Level 2 Req = requirement_documents/Tracing_Examples/Level2Reqs.xlsx
+Level 3 Req = requirement_documents/Tracing_Examples/Level3Reqs.csv
+
+[hierarchy]
+# Ordered from most abstract to most derived
+order = Level 1 Req, Level 2 Req, Level 3 Req
+
+[extra_links]
+# Optional non-linear links matched after the main hierarchy is built
+Level 5 Req = requirement_documents/Tracing_Examples/Level5Reqs.xlsx
+
+[export]
+ancestry_xlsx = example_ancestry.csv
+```
+
+Config rules:
+
+- Each label in `[hierarchy]` must appear in `[sources]`.
+- `:: sheet_name` is optional and only applies to spreadsheet sources.
+- `[extra_links]` is optional.
+- The pipeline rewrites these inputs into a generated config that points at normalized intermediate files.
+
+## Pipeline Mode
+
+`requirements_cli.py pipeline` exists for raw source documents that are not yet normalized.
+
+What it does:
+
+1. Loads the tracer config.
+2. Normalizes every source and extra-link input into `output/normalized_for_trace/` by default.
+3. Writes `trace_pipeline.generated.cfg` so the run is reproducible.
+4. Runs the same tracing engine against the normalized outputs.
+
+Example:
+
+```bash
+python requirements_cli.py pipeline -c example.cfg --output-dir output
+```
+
+Generated artifacts usually include:
+
+- `output/normalized_for_trace/*_normalized.xlsx`
+- `output/normalized_for_trace/trace_pipeline.generated.cfg`
+- The final ancestry export named by `[export].ancestry_xlsx`
+
+## Trace Inputs And Behavior
+
+All trace inputs must follow the 18-column DOORS schema. Missing columns are added as empty during loading.
+
+Important behaviors:
+
+- `ParentID` may contain space-separated parent identifiers.
+- `RequirementID` may contain space-separated identifiers and is split into separate logical entries.
+- Rows containing the word `deleted` in most fields are flagged and tagged as deleted in trace output.
+- Tracing builds ancestry upward through `child -> parent` relationships and groups ancestors by hierarchy level.
+- Extra-link sources are matched into existing ancestry paths after the main hierarchy is built.
+- Default output is filtered to leaf requirements unless `--no-filter` is used.
+
+## Trace Outputs
+
+Primary export:
+
+- One row per leaf requirement by default.
+- `Level -1 (External)` captures unmatched external parent IDs.
+- `Level 0 (<label>)` through `Level N (<label>)` capture ancestry by configured hierarchy level.
+- `TopLevel_Definition` captures the nearest ancestor definition available in the path.
+- The leaf requirement row also includes the full 18-column DOORS payload.
+
+Debug files are written when `debug = true` in the config or when `--debug` is passed:
+
+| File | Contents |
+|------|----------|
+| `debug_all_requirements_<stage>.json` | All loaded requirements |
+| `debug_file_sources_<stage>.json` | Source label assigned to each requirement ID |
+| `debug_parent_to_child_<stage>.json` | Forward relationship map |
+| `debug_child_to_parent_<stage>.json` | Reverse relationship map |
+| `debug_ancestry_<stage>.json` | Full ancestry mapping before or after filter |
+| `debug_missing_as_key_<stage>.txt` | IDs present as ancestors but not exported as leaf rows |
+
+`<stage>` is `after_scrape` or `after_filter`.
 
 ## 18-Column DOORS Schema
 
 | Column | Description |
 |--------|-------------|
-| ParentID | Parent requirement identifier |
-| RequirementID | Unique requirement identifier |
-| Type | Requirement type (Functional, Non-Functional, etc.) |
-| SubType | Requirement sub-classification |
-| Title | Short requirement title |
-| Definition | Full requirement description |
-| Notes | Implementation notes |
-| Remarks | Review comments |
-| Responsibility | Responsible team/person |
-| SubSystemApplicability | Sub-system applicability |
-| Applicability | Where requirement applies |
-| Compliance | Compliance status (C/NC/PC) |
-| ComplianceNotes | Compliance details |
-| Verification | Verification method (Test, Review, Demo, etc.) |
-| VerificationNotes | Verification details |
-| ReferenceDocument | Source document reference |
-| OriginalESAIdentifier | Original ESA requirement ID |
-| UpdatesMade | Record of updates/changes made |
+| `ParentID` | Parent requirement identifier or identifiers |
+| `RequirementID` | Unique requirement identifier |
+| `Type` | Requirement type |
+| `SubType` | Requirement subtype |
+| `Title` | Short title |
+| `Definition` | Full requirement text |
+| `Notes` | Notes |
+| `Remarks` | Remarks |
+| `Responsibility` | Responsible owner or team |
+| `SubSysApplicability` | Sub-system applicability |
+| `Applicability` | Applicability scope |
+| `Compliance` | Compliance value, usually `C`, `NC`, or `PC` |
+| `ComplianceNotes` | Compliance details |
+| `Verification` | Verification method |
+| `VerificationNotes` | Verification details |
+| `ReferenceDocument` | Source document reference |
+| `OriginalESAIdentifier` | Original ESA requirement ID |
+| `UpdatesMade` | Manual updates or changes |
 
-## Usage Examples
+## Interactive Features And Cache
 
-### Interactive Column Mapping
+Interactive normalization choices are cached in `.cache/file_processing_cache.json`.
 
-When the tool encounters unmapped columns, it displays an interactive menu:
+Cached values include:
 
-```
-Column 'req id' could not be automatically mapped.
+- Selected sheets for multi-sheet Excel files.
+- Manual column mappings for partially matched inputs.
 
-Available target columns:
-  (Dimmed = already assigned)
-  1. ParentID              5. Definition            9. Compliance           13. VerificationNotes
-  2. RequirementID         6. Notes                10. ComplianceNotes     14. ReferenceDocument
-  ...
-
-Enter target column name/number for 'req id' (or 'skip' to ignore): 2
-```
-
-Choices are cached - the next time you process the same file, previous mappings are remembered.
-
-### Multi-Sheet Excel Files
-
-For Excel files with multiple sheets:
-
-```
-File 'requirements.xlsx' contains multiple sheets:
-  1. Overview
-  2. Requirements
-  3. Test Cases
-Please enter the sheet name or number (1-3): 2
-```
-
-Sheet selection is also cached for subsequent runs.
-
-
-## Cache Management
-
-User choices are cached in `.cache/file_processing_cache.json`:
-- Sheet selections (for multi-sheet Excel files)
-- Column mappings (for interactive mapping)
-
-Cache automatically invalidates when files are modified (mtime/size change).
-
-Manual cache clear: `python3 requirements_processor.py --clear-cache`
-
-## Trace Pipeline
-
-The integrated pipeline reuses the existing tracer `.cfg` file format. For each configured source and extra-link source, it:
-
-1. Normalizes the raw input with the management tool.
-2. Writes the normalized intermediate files to a dedicated folder.
-3. Generates a reproducible config snapshot for those normalized files.
-4. Runs the tracer on the generated normalized inputs.
-
-Example:
+Cache invalidation is based on file path, modification time, and size. To clear it manually:
 
 ```bash
-python3 requirements_cli.py pipeline --config example.cfg --output-dir output
+python requirements_processor.py --clear-cache
 ```
 
-Generated artifacts:
+## Programmatic Usage
 
-- `output/normalized_for_trace/*.xlsx`: normalized intermediate files used by tracing
-- `output/normalized_for_trace/trace_pipeline.generated.cfg`: generated tracer config referencing those files
-- `output/ancestry_trace.xlsx`: final trace export
+Normalization:
 
+```python
+from pathlib import Path
+
+from processors import ExcelProcessor
+from utils import FileCache
+
+cache = FileCache()
+processor = ExcelProcessor(cache)
+requirements = processor.extract_requirements(Path("input.xlsx"))
+df = processor.requirements_to_dataframe(requirements)
+df = processor.normalize_dataframe(df)
+processor.export(df, Path("output.csv"))
+```
+
+Tracing:
+
+```python
+from requirements_tracer import run_trace
+from utils.tracer.config import load_config
+
+config = load_config("example.cfg")
+run_trace(config, output_dir="output", debug=True, no_filter=False)
+```
+
+Pipeline:
+
+```python
+from utils.tracer.pipeline import run_normalize_and_trace
+
+run_normalize_and_trace("example.cfg")
+```
+
+## Text Similarity Utilities
+
+The repository also includes an early text similarity workflow for comparing requirement CSVs.
+
+```bash
+python utils/text_similarity_checker.py text_similarity_input/test_child_requirements.csv text_similarity_input/test_parent_requirements.csv
+```
+
+`utils/eval_similarity.py` can then be used to inspect a generated similarity debug CSV.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See `LICENSE`.
 
 ## Author
 
 Christopher Granabetter IfA - UVIE  
-November 2025
+April 2026
