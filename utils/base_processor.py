@@ -11,7 +11,7 @@ import pandas as pd
 import csv
 
 from utils.constants import COLUMNS, COMPLIANCE_MAP
-from utils.text_processing import clean_cell_value
+from utils.text_processing import clean_cell_value, reformat_itemize_in_text
 
 
 @dataclass
@@ -136,6 +136,12 @@ class BaseProcessor(ABC):
         # Normalize compliance values
         if 'Compliance' in df.columns:
             df['Compliance'] = df['Compliance'].apply(self._normalize_compliance)
+
+        # Reformat LaTeX itemize blocks in free-text fields
+        TEXT_COLUMNS = {'Definition', 'Notes', 'Remarks', 'Title', 'ComplianceNotes', 'VerificationNotes'}
+        for col in TEXT_COLUMNS:
+            if col in df.columns:
+                df[col] = df[col].apply(reformat_itemize_in_text)
         
         # Ensure column order
         for col in COLUMNS:

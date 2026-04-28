@@ -114,3 +114,53 @@ def truncate_keyword(text, keyword_map):
         if keyword in text:
             return keyword, field
     return None, None
+
+def reformat_itemize_in_text(text: str) -> str:
+    """Find and reformat all \\begin{itemize}...\\end{itemize} blocks in a text string."""
+    blocks = _extract_itemize_blocks(text)
+    for block in blocks:
+        text = text.replace(block, _reformat_itemize_block(block) + "\n")
+    return text
+
+def _extract_itemize_blocks(text: str) -> list[str]:
+    """Extract all top-level \\begin{itemize}...\\end{itemize} blocks, handling nesting."""
+    results = []
+    depth = 0
+    start = -1
+
+    for m in re.finditer(r'\\(begin|end){itemize}', text):
+        if m.group(1) == 'begin':
+            if depth == 0:
+                start = m.start()
+            depth += 1
+        else:
+            depth -= 1
+            if depth == 0 and start != -1:
+                results.append(text[start:m.end()])
+                start = -1
+
+    return results
+
+def _reformat_itemize_block(block: str) -> str:
+    """Reformat a single \\begin{itemize}...\\end{itemize} block with proper indentation."""
+    
+    block = block.replace('\\begin{itemize}', '\n\\begin{itemize}')
+    block = block.replace('\\end{itemize}', '\n\\end{itemize}')
+    block = block.replace('\\item', '\n\\item')
+
+    depth = 0
+    new_lines = []
+    for line in block.splitlines():
+        if line.startswith('\\begin{itemize}'):
+            new_line = "  " * depth + line.strip()
+            depth += 1
+        elif line.startswith('\\end{itemize}'):
+            depth -= 1
+            new_line = "  " * depth + line.strip()
+        else:
+            new_line = "  " * depth + line.strip()
+        
+        new_lines.append(new_line)
+            
+        block = "\n".join(new_lines)
+    return block
