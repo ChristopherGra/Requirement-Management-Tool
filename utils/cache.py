@@ -32,22 +32,28 @@ class FileCache:
     def _get_file_hash(self, file_path):
         """
         Generate a hash of the file to uniquely identify it.
-        
-        Uses path + modification time + size to detect changes.
-        
+
+        Normalises to an absolute path first so that the same file always
+        produces the same key regardless of whether it was supplied as a
+        relative or absolute path (e.g. manage vs pipeline / config-based
+        invocations resolve paths differently).
+
+        Uses absolute-path + modification time + size to detect changes.
+
         Args:
-            file_path: Path to file
-            
+            file_path: Path to file (relative or absolute)
+
         Returns:
             MD5 hash string
         """
+        abs_path = str(Path(file_path).resolve())
         try:
-            stat = os.stat(file_path)
-            unique_string = f"{file_path}_{stat.st_mtime}_{stat.st_size}"
+            stat = os.stat(abs_path)
+            unique_string = f"{abs_path}_{stat.st_mtime}_{stat.st_size}"
             return hashlib.md5(unique_string.encode()).hexdigest()
         except FileNotFoundError:
             # File doesn't exist yet (template generation, etc.)
-            return hashlib.md5(str(file_path).encode()).hexdigest()
+            return hashlib.md5(abs_path.encode()).hexdigest()
     
     def _load_cache(self):
         """Load the processing cache from disk."""
@@ -102,9 +108,17 @@ class FileCache:
         cache = self._load_cache()
         file_hash = self._get_file_hash(file_path)
         
-        # Merge new choices with existing ones
+        # Merge new choices with existing ones.
+        # Dict values (e.g. column_mappings) are deep-merged so that entries
+        # saved by one sheet are not overwritten when a different sheet from
+        # the same file is processed and carries a different (possibly smaller)
+        # set of columns.
         existing = cache.get(file_hash, {})
-        existing.update(choices)
+        for key, value in choices.items():
+            if key in existing and isinstance(existing[key], dict) and isinstance(value, dict):
+                existing[key].update(value)
+            else:
+                existing[key] = value
         cache[file_hash] = existing
         
         self._save_cache()
