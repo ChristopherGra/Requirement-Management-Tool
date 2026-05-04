@@ -104,7 +104,7 @@ def detect_file_type(file_path):
     
     if ext in ['.xlsx', '.xls', '.xlsm']:
         return 'excel'
-    elif ext == '.csv':
+    elif ext == '.csv' or ext.lower() == '.csv_semicolon':
         return 'csv'
     elif ext == '.pdf':
         return 'pdf'
