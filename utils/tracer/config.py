@@ -3,17 +3,18 @@ import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 log = logging.getLogger(__name__)
 
 
 @dataclass
 class SourceEntry:
-    """A single data source: label + xlsx filepath + optional sheet name."""
+    """A single data source: label + filepath + optional sheet name."""
     label: str
     filepath: str
     sheet: Optional[str] = None
+    id_template: Optional[str] = None
 
 
 @dataclass
@@ -63,6 +64,16 @@ def load_config(cfg_path: str) -> TracerConfig:
             se = _parse_source_entry(label, value, base_dir)
             config.extra_links.append(se)
             log.info("Extra link: %s -> %s (sheet: %s)", se.label, se.filepath, se.sheet)
+
+    # [transforms] — label → RequirementID synthesis template, e.g. R-{Cat}-{N}/{Type}
+    transforms: Dict[str, str] = {}
+    if parser.has_section("transforms"):
+        for label, template in parser.items("transforms"):
+            transforms[label] = template
+    for se in config.sources + config.extra_links:
+        if se.label in transforms:
+            se.id_template = transforms[se.label]
+            log.info("Transform for '%s': %s", se.label, se.id_template)
 
     # [export]
     if parser.has_section("export"):

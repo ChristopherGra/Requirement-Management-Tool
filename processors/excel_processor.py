@@ -29,6 +29,7 @@ class ExcelProcessor(BaseProcessor):
         self,
         input_path: Path,
         sheet_name: Optional[str] = None,
+        id_template: Optional[str] = None,
     ) -> List[Requirement]:
         """
         Extract requirements from Excel/CSV file.
@@ -36,6 +37,8 @@ class ExcelProcessor(BaseProcessor):
         Args:
             input_path: Path to .xlsx, .xls, .xlsm, or .csv file
             sheet_name: Optional sheet override for Excel files
+            id_template: Optional template to synthesise RequirementID from raw
+                         columns, e.g. ``R-{Cat}-{N}/{Type}``
             
         Returns:
             List of Requirement objects
@@ -47,6 +50,17 @@ class ExcelProcessor(BaseProcessor):
         
         if df is None:
             return []
+        
+        if id_template:
+            col_lk = {c.lower(): c for c in df.columns}
+            import re as _re
+            parts = _re.split(r"\{[^}]+\}", id_template)
+            phs = _re.findall(r"\{([^}]+)\}", id_template)
+            ids = pd.Series([parts[0]] * len(df), index=df.index)
+            for i, ph in enumerate(phs):
+                col = col_lk.get(ph.lower())
+                ids = ids + (df[col].astype(str).str.strip() if col else "") + parts[i + 1]
+            df["RequirementID"] = ids
         
         # Standardize column names
         df = self._standardize_columns(df)
@@ -80,7 +94,7 @@ class ExcelProcessor(BaseProcessor):
                 sheet_name=sheet_name,
             )
             return result if result is not None else pd.DataFrame()
-        elif ext == ".csv":
+        elif ext == ".csv" or ext.lower() == ".csv_semicolon":
             return pd.read_csv(input_path, encoding="utf-8", quotechar='"', sep=";", engine='python', on_bad_lines='warn')
         else:
             print(f"Unsupported file type: {ext}")

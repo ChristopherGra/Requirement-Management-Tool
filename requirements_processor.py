@@ -56,6 +56,7 @@ def process_single_file(
     output_path: Optional[Path] = None,
     cache: Optional[FileCache] = None,
     sheet_name: Optional[str] = None,
+    id_template: Optional[str] = None,
 ):
     """
     Process a single requirements file.
@@ -77,6 +78,7 @@ def process_single_file(
         input_path,
         cache=cache,
         sheet_name=sheet_name,
+        id_template=id_template,
     )
     if normalized is None:
         return False
@@ -98,6 +100,7 @@ def normalize_input_file(
     input_path: Path,
     cache: Optional[FileCache] = None,
     sheet_name: Optional[str] = None,
+    id_template: Optional[str] = None,
 ) -> Optional[Tuple[List[object], pd.DataFrame, object]]:
     """Return normalized requirements and dataframe for a single input file."""
     if cache is None:
@@ -109,16 +112,23 @@ def normalize_input_file(
         print(f"Error: {e}")
         return None
 
-    requirements = _extract_requirements(processor, input_path, sheet_name)
+    requirements = _extract_requirements(processor, input_path, sheet_name, id_template)
     df = processor.requirements_to_dataframe(requirements)
     df = processor.normalize_dataframe(df)
     return requirements, df, processor
 
 
-def _extract_requirements(processor, input_path: Path, sheet_name: Optional[str] = None):
+def _extract_requirements(
+    processor,
+    input_path: Path,
+    sheet_name: Optional[str] = None,
+    id_template: Optional[str] = None,
+):
     """Extract requirements from a source, honoring explicit Excel sheet selection."""
     if isinstance(processor, ExcelProcessor):
-        return processor.extract_requirements(input_path, sheet_name=sheet_name)
+        return processor.extract_requirements(
+            input_path, sheet_name=sheet_name, id_template=id_template
+        )
 
     if sheet_name:
         print(

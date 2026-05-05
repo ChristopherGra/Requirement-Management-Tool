@@ -79,6 +79,7 @@ def _build_generated_config(
                 output_path=output_path,
                 cache=cache,
                 sheet_name=entry.sheet,
+                id_template=entry.id_template,
             )
             if not success:
                 raise ValueError(f"Failed to normalize source '{entry.label}'")
@@ -88,6 +89,7 @@ def _build_generated_config(
             label=entry.label,
             filepath=str(normalized_sources[key]),
             sheet=None,
+            id_template=None,  # already baked into the normalized file
         )
 
     generated_sources = [normalize_entry(source) for source in config.sources]

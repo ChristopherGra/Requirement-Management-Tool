@@ -55,7 +55,7 @@ def run_trace(
 
     for src in config.sources:
         try:
-            entries = load_requirements(src.filepath, src.sheet, src.label)
+            entries = load_requirements(src.filepath, src.sheet, src.label, src.id_template)
         except (FileNotFoundError, ValueError) as exc:
             log.error("Failed to load source '%s': %s", src.label, exc)
             return 1
@@ -65,7 +65,7 @@ def run_trace(
 
     for src in config.extra_links:
         try:
-            entries = load_requirements(src.filepath, src.sheet, src.label)
+            entries = load_requirements(src.filepath, src.sheet, src.label, src.id_template)
         except (FileNotFoundError, ValueError) as exc:
             log.error("Failed to load extra source '%s': %s", src.label, exc)
             return 1
@@ -74,15 +74,15 @@ def run_trace(
     log.info("Building trace...")
     ancestry = tracer.trace()
 
+    scrape_coverage = tracer.verify_coverage(ancestry, "after_scrape")
     if resolved_debug:
-        write_debug_files(tracer, ancestry, resolved_output_dir, "after_scrape")
-    tracer.verify_coverage(ancestry, "after_scrape")
+        write_debug_files(tracer, ancestry, resolved_output_dir, "after_scrape", scrape_coverage)
 
     if not no_filter:
         ancestry = tracer.filter_redundant(ancestry)
-        tracer.verify_coverage(ancestry, "after_filter")
+        filter_coverage = tracer.verify_coverage(ancestry, "after_filter")
         if resolved_debug:
-            write_debug_files(tracer, ancestry, resolved_output_dir, "after_filter")
+            write_debug_files(tracer, ancestry, resolved_output_dir, "after_filter", filter_coverage)
 
     xlsx_path = str(Path(resolved_output_dir) / config.export_xlsx)
     export_ancestry_xlsx(tracer, ancestry, xlsx_path)

@@ -1,22 +1,33 @@
 import logging
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import pandas as pd
 
-from utils.constants import COLUMNS
+from utils.constants import COLUMNS, COLUMN_MAPPING
 from utils.base_processor import Requirement
 
 log = logging.getLogger(__name__)
 
+# Column aliases used when raw CSV columns don't match the DOORS schema names.
+_CSV_ALIASES = {k: v for k, v in COLUMN_MAPPING.items()}
 
-def load_requirements(filepath: str, sheet: Optional[str], label: str) -> List[Dict]:
-    """Load requirements from an xlsx file / sheet.
+
+def load_requirements(
+    filepath: str,
+    sheet: Optional[str],
+    label: str,
+    id_template: Optional[str] = None,
+) -> List[Dict]:
+    """Load requirements from an xlsx or CSV file.
 
     Args:
-        filepath: Path to the xlsx file.
-        sheet:    Sheet name to load, or None to load all sheets.
-        label:    Label to tag every loaded requirement with.
+        filepath:    Path to the source file.
+        sheet:       Sheet name for xlsx (ignored for CSV).
+        label:       Label to tag every loaded requirement with.
+        id_template: Optional template to synthesise RequirementID from raw
+                     columns, e.g. ``R-{Cat}-{N}/{Type}``.
 
     Returns:
         List of dicts, each with keys 'requirement', 'deleted', 'label'.
@@ -26,6 +37,26 @@ def load_requirements(filepath: str, sheet: Optional[str], label: str) -> List[D
         raise FileNotFoundError(f"Source file not found: {filepath}")
 
     log.info("Loading '%s' from %s (sheet: %s)", label, filepath, sheet or "all")
+
+    fname = path.name.upper()
+    if ".CSV" in fname or ".TSV" in fname:
+        delim = ";" if "SEMICOLON" in fname or "SC" in fname else ","
+        df = pd.read_csv(filepath, sep=delim, dtype=str, keep_default_na=False)
+        # Apply column aliases (case-insensitive) so DOORS names are used downstream
+        df = df.rename(columns={c: _CSV_ALIASES[c.lower()] for c in df.columns if c.lower() in _CSV_ALIASES})
+        if id_template:
+            col_lk = {c.lower(): c for c in df.columns}
+            parts = re.split(r"\{[^}]+\}", id_template)
+            phs = re.findall(r"\{([^}]+)\}", id_template)
+            ids = pd.Series([parts[0]] * len(df), index=df.index)
+            for i, ph in enumerate(phs):
+                col = col_lk.get(ph.lower())
+                ids = ids + (df[col].astype(str).str.strip() if col else "") + parts[i + 1]
+            df["RequirementID"] = ids
+            log.info("  Synthesised RequirementID using template: %s", id_template)
+        entries = _entries_from_df(df, label, source_name=path.name)
+        log.info("  Loaded %d requirements as '%s'", len(entries), label)
+        return entries
 
     excel_file = pd.ExcelFile(filepath)
 
@@ -41,23 +72,19 @@ def load_requirements(filepath: str, sheet: Optional[str], label: str) -> List[D
 
     entries: List[Dict] = []
     for sheet_name in sheets:
-        entries.extend(_load_sheet(excel_file, sheet_name, label))
+        df = excel_file.parse(sheet_name)
+        df.columns = df.columns.str.replace(" ", "")
+        entries.extend(_entries_from_df(df, label, source_name=sheet_name))
 
     log.info("  Loaded %d requirements as '%s'", len(entries), label)
     return entries
 
 
-def _load_sheet(excel_file: pd.ExcelFile, sheet_name: str, label: str) -> List[Dict]:
-    """Parse a single sheet into requirement dicts."""
-    df = excel_file.parse(sheet_name)
-    df.columns = df.columns.str.replace(" ", "")
-
-    # Check critical columns exist
+def _entries_from_df(df: pd.DataFrame, label: str, source_name: str) -> List[Dict]:
+    """Shared: validate, normalise and convert a DataFrame to requirement dicts."""
     missing = [col for col in ("RequirementID", "ParentID") if col not in df.columns]
     if missing:
-        log.warning(
-            "Sheet '%s' missing critical columns: %s — skipping", sheet_name, missing
-        )
+        log.warning("'%s' missing critical columns: %s — skipping", source_name, missing)
         return []
 
     # Ensure all 18 schema columns exist
