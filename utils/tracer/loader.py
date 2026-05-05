@@ -94,6 +94,14 @@ def _entries_from_df(df: pd.DataFrame, label: str, source_name: str) -> List[Dic
 
     # Normalize values
     df[COLUMNS] = df[COLUMNS].fillna("").astype(str)
+
+    # Collapse multi-word identifiers like "EID-A IRD 1234" into a single token
+    # "EID-A-IRD-1234" before any whitespace-based tokenisation. This must run
+    # on both columns so parent references stay consistent with requirement IDs.
+    _eid_pat = r"(?i)\bEID-A\s+IRD\s+(\d+)\b"
+    for _col in ("RequirementID", "ParentID"):
+        df[_col] = df[_col].str.replace(_eid_pat, lambda m: f"EID-A-IRD-{m.group(1)}", regex=True)
+
     df["RequirementID"] = (
         df["RequirementID"].str.replace(r"[\n\r]+", " ", regex=True).str.strip()
     )
