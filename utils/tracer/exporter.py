@@ -1,7 +1,8 @@
 import json
 import logging
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -27,43 +28,71 @@ def build_ancestry_dataframe(tracer, ancestry: Dict) -> pd.DataFrame:
     all_columns = level_col_names + req_columns
 
     rows = []
-    for _level_key, reqs in ancestry.items():
+    # Group entries by (level_key, base_req_id) so multi-parent extras collapse
+    # into one row.  Each group entry is (via_pid_or_None, path_dict).
+    grouped: Dict[Tuple, List] = defaultdict(list)
+    for level_key, reqs in ancestry.items():
         for req_id, path in reqs.items():
-            base_req_id = req_id.split(" [path ")[0]
-            req_data = tracer.all_requirements.get(base_req_id, {})
-            req_obj = req_data.get("Requirement")
-            req_dict = req_obj.to_dict() if req_obj else {col: "" for col in COLUMNS}
-            req_level = tracer.file_hierarchy.get(
-                req_data.get("file_label", ""), -1
-            )
+            via_pid: Optional[str] = None
+            if " [via " in req_id:
+                via_pid = req_id.split(" [via ")[1].rstrip("]")
+            base_req_id = req_id.split(" [via ")[0].split(" [path ")[0]
+            grouped[(level_key, base_req_id)].append((via_pid, path))
 
-            row = {}
-            row["Level -1 (External)"] = path.get(-1, "")
-            for i, label in enumerate(tracer.file_hierarchy_order):
-                row[f"Level {i} ({label})"] = path.get(i, "")
+    for (level_key, base_req_id), entries in grouped.items():
+        req_data = tracer.all_requirements.get(base_req_id, {})
+        req_obj = req_data.get("Requirement")
+        req_dict = req_obj.to_dict() if req_obj else {col: "" for col in COLUMNS}
+        req_level = tracer.file_hierarchy.get(req_data.get("file_label", ""), -1)
 
-            # TopLevel_Definition: definitions of the closest ancestor(s)
-            top_definition = ""
+        # Merge level columns: union of all IDs across every path for this req
+        merged_levels: Dict[object, List[str]] = defaultdict(list)
+        for _via_pid, path in entries:
+            for lvl, ids_str in path.items():
+                for v in ids_str.split("\n"):
+                    if v and v not in merged_levels[lvl]:
+                        merged_levels[lvl].append(v)
+
+        row: Dict = {}
+        row["Level -1 (External)"] = "\n".join(merged_levels.get(-1, []))
+        for i, label in enumerate(tracer.file_hierarchy_order):
+            row[f"Level {i} ({label})"] = "\n".join(merged_levels.get(i, []))
+
+        # TopLevel_Definition: one block per matched parent, each prefixed
+        # with [Via parent: PID] when there are multiple parents.
+        multi = len(entries) > 1 or entries[0][0] is not None
+        top_def_blocks = []
+        for via_pid, path in entries:
+            # Find closest ancestor level
+            anc_def = ""
             for lvl in reversed(range(len(tracer.file_hierarchy_order))):
                 if lvl in path and lvl != req_level:
                     defs = []
                     for tid in path[lvl].split("\n"):
                         clean_id = tid.replace(" [DELETED]", "").strip()
-                        if not clean_id:
-                            continue
                         top_req = tracer.all_requirements.get(clean_id, {})
                         top_req_obj = top_req.get("Requirement")
                         if top_req_obj and top_req_obj.definition:
-                            defs.append(top_req_obj.definition)
-                    top_definition = "\n".join(defs)
+                            defs.append(tid + ":\n" + top_req_obj.definition)
+                    anc_def = "\n\n".join(defs)
                     break
 
-            for col in COLUMNS:
-                if col == "Definition":
-                    row["TopLevel_Definition"] = top_definition
-                row[col] = req_dict.get(col, "")
+            if multi and via_pid:
+                prefix = f"[Via parent: {via_pid}]"
+                block = f"{prefix}\n\n{anc_def}" if anc_def else prefix
+            else:
+                block = anc_def
+            if block:
+                top_def_blocks.append(block)
 
-            rows.append(row)
+        top_definition = "\n\n---\n\n".join(top_def_blocks)
+
+        for col in COLUMNS:
+            if col == "Definition":
+                row["TopLevel_Definition"] = top_definition
+            row[col] = req_dict.get(col, "")
+
+        rows.append(row)
 
     return pd.DataFrame(rows, columns=all_columns)
 
@@ -85,8 +114,18 @@ def export_ancestry_xlsx(tracer, ancestry: Dict, output_path: str) -> None:
     log.info("Ancestry trace exported to '%s' (%d rows)", output_path, len(df))
 
 
-def write_debug_files(tracer, ancestry: Dict, output_dir: str, stage: str = "") -> None:
-    """Write debug JSON files to output_dir."""
+def write_debug_files(
+    tracer,
+    ancestry: Dict,
+    output_dir: str,
+    stage: str = "",
+    coverage: Dict = None,
+) -> None:
+    """Write debug JSON files to output_dir.
+
+    ``coverage`` should be the dict returned by ``tracer.verify_coverage()``.
+    If omitted, the missing-as-key debug file is skipped.
+    """
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     suffix = f"_{stage}" if stage else ""
@@ -130,8 +169,7 @@ def write_debug_files(tracer, ancestry: Dict, output_dir: str, stage: str = "") 
     _write_json(out / f"debug_ancestry{suffix}.json", ancestry_serial)
 
     # Coverage: missing-as-key list
-    coverage = tracer.verify_coverage(ancestry, stage)
-    if coverage["missing_as_key"]:
+    if coverage and coverage["missing_as_key"]:
         lines = []
         for mid in coverage["missing_as_key"]:
             lbl = tracer.all_requirements.get(mid, {}).get("file_label", "?")

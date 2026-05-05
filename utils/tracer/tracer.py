@@ -111,7 +111,7 @@ class RequirementsTracer:
 
         for _key, reqs in ancestry.items():
             for req_id, path in reqs.items():
-                clean_id = req_id.split(" [path ")[0].replace(" [DELETED]", "")
+                clean_id = req_id.split(" [path ")[0].split(" [via ")[0].replace(" [DELETED]", "")
                 ancestry_keys.add(clean_id)
                 for val_str in path.values():
                     for v in val_str.split("\n"):
@@ -261,8 +261,6 @@ class RequirementsTracer:
                 # Filter noise tokens
                 parent_ids = {p for p in parent_ids if "created" not in p.lower()}
 
-                deleted = data.get("deleted", "")
-
                 if not parent_ids:
                     ancestry[label][req_id] = {}
                     continue
@@ -309,8 +307,8 @@ class RequirementsTracer:
                         unmatched_parents.append(pid)
 
                 if matched_paths:
-                    for idx, ppath in enumerate(matched_paths.values()):
-                        key = req_id if idx == 0 else f"{req_id} [path {idx + 1}]"
+                    for pid, ppath in matched_paths.items():
+                        key = f"{req_id} [via {pid}]"
                         final_path = {
                             lvl: "\n".join(ids) for lvl, ids in ppath.items()
                         }
