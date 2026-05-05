@@ -60,7 +60,7 @@ def build_ancestry_dataframe(tracer, ancestry: Dict) -> pd.DataFrame:
 
         # TopLevel_Definition: one block per matched parent, each prefixed
         # with [Via parent: PID] when there are multiple parents.
-        multi = len(entries) > 1 or entries[0][0] is not None
+        multi = len(entries) > 1
         top_def_blocks = []
         for via_pid, path in entries:
             # Find closest ancestor level
