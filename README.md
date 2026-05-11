@@ -64,7 +64,7 @@ python3 requirements_processor.py --batch requirement_documents/
 # Process only PDFs
 python3 requirements_processor.py --batch docs/ --type pdf
 
-# Generate DOORS template
+# Generate template
 python3 requirements_processor.py --template templates/requirements_template.xlsx
 
 # Clear cache (reset user choices)
@@ -90,7 +90,7 @@ RM/
 ├── utils/
 │   ├── base_processor.py            # Shared processor base class + template generation
 │   ├── cache.py                     # FileCache implementation
-│   ├── constants.py                 # DOORS schema, column mapping, compliance mapping
+│   ├── constants.py                 # column schema, column mapping, compliance mapping
 │   ├── io_helpers.py                # Input/output helpers and prompts
 │   ├── text_processing.py           # Text normalization helpers
 │   ├── text_similarity_checker.py   # CSV similarity checker
@@ -154,7 +154,7 @@ python requirements_cli.py pipeline -c example.cfg --output-dir output --normali
 
 ### 2. `requirements_processor.py`
 
-Standalone normalization entry point. Use this when you only need to convert source documents into the DOORS schema.
+Standalone normalization entry point. Use this when you only need to convert source documents into the standardised schema.
 
 Supported modes:
 
@@ -291,7 +291,7 @@ Generated artifacts usually include:
 
 ## Trace Inputs And Behavior
 
-All trace inputs must follow the 18-column DOORS schema. Missing columns are added as empty during loading.
+All trace inputs must follow the 18-column standardised schema. Missing columns are added as empty during loading.
 
 Important behaviors:
 
@@ -310,7 +310,7 @@ Primary export:
 - `Level -1 (External)` captures unmatched external parent IDs.
 - `Level 0 (<label>)` through `Level N (<label>)` capture ancestry by configured hierarchy level.
 - `TopLevel_Definition` captures the nearest ancestor definition available in the path.
-- The leaf requirement row also includes the full 18-column DOORS payload.
+- The leaf requirement row also includes the full 18-column standardised payload.
 
 Debug files are written when `debug = true` in the config or when `--debug` is passed:
 
@@ -325,7 +325,7 @@ Debug files are written when `debug = true` in the config or when `--debug` is p
 
 `<stage>` is `after_scrape` or `after_filter`.
 
-## 18-Column DOORS Schema
+## 18-Column Standardised Schema
 
 | Column | Description |
 |--------|-------------|
