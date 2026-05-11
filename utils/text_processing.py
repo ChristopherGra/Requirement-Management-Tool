@@ -23,14 +23,8 @@ def normalize_unicode_text(text):
     if not isinstance(text, str):
         return str(text)
 
-    # NFKD normalization converts compatibility characters to simpler forms
-    text = unicodedata.normalize('NFKD', text)
-    
-    # Encode to ASCII, ignoring characters that can't be represented
-    # This handles most accented characters automatically
-    text = text.encode('ascii', 'ignore').decode('ascii')
-    
-    # Manual replacements for math symbols and typography
+    # Manual replacements for math symbols and typography — must run BEFORE
+    # the ASCII encode step so these characters are not silently stripped.
     replacements = {
         '\u2264': '<=',  # ≤ less than or equal
         '\u2265': '>=',  # ≥ greater than or equal
@@ -51,7 +45,12 @@ def normalize_unicode_text(text):
     
     for unicode_char, ascii_replacement in replacements.items():
         text = text.replace(unicode_char, ascii_replacement)
-    
+
+    # NFKD normalization converts compatibility characters to simpler forms,
+    # then drop anything still non-ASCII (accented chars etc.).
+    text = unicodedata.normalize('NFKD', text)
+    text = text.encode('ascii', 'ignore').decode('ascii')
+
     return text
 
 
