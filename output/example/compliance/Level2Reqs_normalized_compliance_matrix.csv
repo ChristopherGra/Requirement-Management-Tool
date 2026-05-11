@@ -1,0 +1,8 @@
+ParentID;RequirementID;Type;SubType;Title;Definition;Notes;Remarks;Responsibility;SubSysApplicability;Applicability;Compliance;ComplianceNotes;Verification;VerificationNotes;ReferenceDocument;OriginalESAIdentifier;UpdatesMade
+REQ-MIS-002;REQ-SYS-001;;;Payload Accommodation;The spacecraft shall provide interfaces for payload instruments.;Mechanical, electrical, thermal.;;;SYS;;;;Verify via interface testing.;;;;
+REQ-MIS-004;REQ-SYS-002;;;Communication Capability;The spacecraft shall support bidirectional communication with the ground segment.;Telemetry and telecommand.;;;SYS;;;;Verify via link testing.;;;;
+REQ-MIS-003;REQ-SYS-003;;;Power Provision;The spacecraft shall provide sufficient electrical power to all subsystems.;Include margins.;;;SYS;;;;Verify via power budget analysis.;;;;
+REQ-MIS-005;REQ-SYS-004;;;Pointing Accuracy;The spacecraft shall achieve pointing accuracy sufficient for science operations.;Driven by instrument needs.;;;SYS;;;;Verify via AOCS testing.;;;;
+REQ-MIS-001;REQ-SYS-005;;;Environmental Survivability;The spacecraft shall withstand mission environmental conditions.;Thermal, radiation, mechanical.;;;SYS;;;;Verify via qualification testing.;;;;
+REQ-MIS-004;REQ-SYS-006;;;Data Handling;The spacecraft shall handle, store, and route science and housekeeping data.;Includes buffering and prioritization.;;;SYS;;;;Verify via data flow testing.;;;;
+REQ-MIS-006;REQ-SYS-007;;;Calibration Support;The spacecraft shall support instrument calibration activities.;Includes timing and reference inputs.;;;SYS;;;;Verify via calibration procedures.;;;;

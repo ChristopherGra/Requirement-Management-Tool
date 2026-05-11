@@ -1,0 +1,8 @@
+ParentID;RequirementID;Type;SubType;Title;Definition;Notes;Remarks;Responsibility;SubSysApplicability;Applicability;Compliance;ComplianceNotes;Verification;VerificationNotes;ReferenceDocument;OriginalESAIdentifier;UpdatesMade
+REQ-INST-001;REQ-IPU-004;;;Interface Support;The processing unit shall support required communication interfaces.;Deleted;;;IPU;;;;Verify via interface validation.;;;;
+REQ-MIS-004;REQ-IPU-001;;;Processing Capability;The processing unit shall process instrument data in real time without loss.;Define margin.;;;IPU;;;;Verify via performance testing.;;;;
+REQ-INST-004;REQ-IPU-002;;;Memory Capacity;The processing unit shall store at least 24 hours of instrument data.;Depends on data rate.;;;IPU;;;;Verify via memory testing.;;;;
+REQ-INST-001;REQ-IPU-003;;;Data Throughput;The processing unit shall support required data throughput to spacecraft.;Include peak rates.;;;IPU;;;;Verify via throughput testing.;;;;
+REQ-INST-003;REQ-IPU-005;;;Mode Control;The processing unit shall manage instrument operational modes.;Ensure safe transitions.;;;IPU;;;;Verify via mode testing.;;;;
+REQ-INST-006;REQ-IPU-006;;;Calibration Processing;The processing unit shall process calibration data and apply corrections.;Supports accuracy requirements.;;;IPU;;;;Verify via calibration validation.;;;;
+REQ-INST-002;REQ-IPU-007;;;Command Handling;The processing unit shall interpret and route commands internally.;Includes validation.;;;IPU;;;;Verify via command tests.;;;;

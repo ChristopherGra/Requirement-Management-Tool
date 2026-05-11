@@ -85,6 +85,7 @@ RM/
 ├── requirements_cli.py              # Unified CLI: manage / trace / pipeline
 ├── requirements_processor.py        # Normalization CLI entry point
 ├── requirements_tracer.py           # Tracer CLI entry point
+├── compliance_matrix.py             # Splits annotated ancestry back into per-source compliance matrices
 ├── example.cfg                      # Example tracer configuration
 ├── utils/
 │   ├── base_processor.py            # Shared processor base class + template generation
@@ -397,6 +398,48 @@ from utils.tracer.pipeline import run_normalize_and_trace
 
 run_normalize_and_trace("example.cfg")
 ```
+
+## Compliance Matrix Script
+
+`compliance_matrix.py` dissects an annotated ancestry output back into per-source normalized compliance matrices.
+
+### Workflow
+
+1. Run the pipeline to produce a combined ancestry export (e.g. `output/example/example_ancestry.csv`).
+2. Manually annotate that file in Excel — filling in `Compliance`, `Applicability`, and related columns.
+3. Run `compliance_matrix.py` to split the annotated rows back out into one compliance matrix file per configured source.
+
+Output files are written to `<output_dir>/compliance/` and named `<label>_normalized_compliance_matrix.csv` (or `.xlsx`).
+
+### Usage
+
+```bash
+# Basic usage — reads ancestry path and output dir from the .cfg file
+python compliance_matrix.py -c example.cfg
+
+# Point at a specific annotated ancestry file
+python compliance_matrix.py -c example.cfg --ancestry output/example/example_ancestry_annotated.xlsx
+
+# Override where compliance matrices are written
+python compliance_matrix.py -c example.cfg --output-dir output/compliance/
+
+# Override the normalized intermediates directory
+python compliance_matrix.py -c example.cfg --normalized-dir output/normalized_for_trace/
+
+# Write .xlsx instead of .csv
+python compliance_matrix.py -c example.cfg --fmt xlsx
+```
+
+Options:
+
+| Flag | Description |
+|------|-------------|
+| `-c`, `--config` | Required tracer `.cfg` file |
+| `--ancestry` | Path to the annotated ancestry file (overrides config default) |
+| `--output-dir` | Override the compliance output directory |
+| `--normalized-dir` | Override the normalized intermediates directory |
+| `--fmt` | Output format: `csv` (default) or `xlsx` |
+| `-v`, `--verbose` | Enable DEBUG-level logging |
 
 ## Text Similarity Utilities
 

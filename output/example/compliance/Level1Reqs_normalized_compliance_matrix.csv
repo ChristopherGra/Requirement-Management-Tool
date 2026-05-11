@@ -1,0 +1,7 @@
+ParentID;RequirementID;Type;SubType;Title;Definition;Notes;Remarks;Responsibility;SubSysApplicability;Applicability;Compliance;ComplianceNotes;Verification;VerificationNotes;ReferenceDocument;OriginalESAIdentifier;UpdatesMade
+;REQ-MIS-001;;;Mission Objective;The mission shall acquire scientific data to characterize the target environment.;Top-level mission driver.;;;;;;;Verify via mission success criteria review.;;;;
+;REQ-MIS-002;;;Science Data Collection;The mission shall collect quantitative measurements of defined physical parameters.;Defined by science team.;;;;;;;Verify via data product validation.;;;;
+;REQ-MIS-003;;;Mission Lifetime;The mission shall operate for a minimum duration of 12 months.;Includes nominal phase.;;;;;;;Verify via operations records.;;;;
+;REQ-MIS-004;;;Data Return;The mission shall transmit collected science data to the ground segment.;Includes redundancy in communication.;;;;;;;Verify via end-to-end data delivery.;;;;
+;REQ-MIS-005;;;Coverage;The mission shall achieve required spatial and/or temporal coverage of the target.;Orbit-dependent.;;;;;;;Verify via coverage analysis.;;;;
+;REQ-MIS-006;;;Measurement Accuracy;The mission shall achieve measurement accuracy sufficient to meet scientific objectives.;Flows down to instrument requirements.;;;;;;;Verify via calibration and validation.;;;;

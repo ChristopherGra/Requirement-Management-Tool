@@ -1,0 +1,75 @@
+Level -1 (External);Level 0 (Level 1 Req);Level 1 (Level 2 Req);Level 2 (Level 3 Req);Level 3 (Level 4 Req);Level 4 (Level 5 Req);ParentID;RequirementID;Type;SubType;Title;TopLevel_Definition;Definition;Notes;Remarks;Responsibility;SubSysApplicability;Applicability;Compliance;ComplianceNotes;Verification;VerificationNotes;ReferenceDocument;OriginalESAIdentifier;UpdatesMade
+;REQ-MIS-004;;;REQ-IPU-001;;REQ-IPU-001;REQ-ASW-001;;;Boot Initialization;"REQ-IPU-001:
+The processing unit shall process instrument data in real time without loss.";The software shall initialize hardware and enter a safe operational state on startup.;Includes self-checks.;;;ASW;;;;Verify via startup testing.;;;;
+;REQ-MIS-004;REQ-SYS-002;REQ-INST-002;REQ-IPU-007;;REQ-IPU-007;REQ-ASW-002;;;Command Processing;"REQ-IPU-007:
+The processing unit shall interpret and route commands internally.";The software shall decode and execute received commands.;Reject invalid commands.;;;ASW;;;;Verify via command tests.;;;;
+;REQ-MIS-004;REQ-SYS-006;"REQ-INST-001
+REQ-INST-004 [DELETED]";"REQ-IPU-001
+REQ-IPU-002
+REQ-IPU-003
+REQ-IPU-004 [DELETED]";;"REQ-IPU-001
+REQ-SYS-006";REQ-ASW-003;;;Data Acquisition;"[Via parent: REQ-IPU-001]
+
+REQ-IPU-001:
+The processing unit shall process instrument data in real time without loss.
+
+---
+
+[Via parent: REQ-SYS-006]
+
+REQ-IPU-002:
+The processing unit shall store at least 24 hours of instrument data.
+
+REQ-IPU-003:
+The processing unit shall support required data throughput to spacecraft.
+
+REQ-IPU-004 [DELETED]:
+The processing unit shall support required communication interfaces.";The software shall acquire and buffer instrument data.;Define buffer limits.;;;ASW;;;;Verify via data flow testing.;;;;
+;REQ-MIS-004;REQ-SYS-006;"REQ-INST-001
+REQ-INST-004 [DELETED]";"REQ-IPU-001
+REQ-IPU-002
+REQ-IPU-003
+REQ-IPU-004 [DELETED]";;"REQ-IPU-001
+REQ-SYS-006";REQ-ASW-004;;;Data Processing;"[Via parent: REQ-IPU-001]
+
+REQ-IPU-001:
+The processing unit shall process instrument data in real time without loss.
+
+---
+
+[Via parent: REQ-SYS-006]
+
+REQ-IPU-002:
+The processing unit shall store at least 24 hours of instrument data.
+
+REQ-IPU-003:
+The processing unit shall support required data throughput to spacecraft.
+
+REQ-IPU-004 [DELETED]:
+The processing unit shall support required communication interfaces.";The software shall process raw data into calibrated outputs.;Algorithms defined separately.;;;ASW;;;;Verify via validation tests.;;;;
+;REQ-MIS-004;REQ-SYS-006;REQ-INST-004 [DELETED];REQ-IPU-002;;REQ-IPU-002;REQ-ASW-005;;;Memory Management;"REQ-IPU-002:
+The processing unit shall store at least 24 hours of instrument data.";The software shall manage memory allocation and prevent overflow.;Include error handling.;;;ASW;;;;Verify via stress testing.;;;;
+;REQ-MIS-005;REQ-SYS-004;"REQ-INST-003
+REQ-INST-031";REQ-IPU-005;;REQ-INST-003;REQ-ASW-006;;;Mode Management;"REQ-IPU-005:
+The processing unit shall manage instrument operational modes.";The software shall control transitions between operational modes.;Ensure safe fallback.;;;ASW;;;;Verify via mode transition testing.;;;;
+;REQ-MIS-005;REQ-SYS-004;"REQ-INST-003
+REQ-INST-031";;;REQ-INST-031;REQ-ASW-061;;;Mode Tracking;"REQ-INST-003:
+The instrument shall support defined operational modes.
+
+REQ-INST-031:
+The instrument shall support Tracking of an observation target";The software shall implement a Tracking procedure;;;;ASW;;;;;;;;
+;REQ-MIS-006;REQ-SYS-007;REQ-INST-006;REQ-IPU-006;;REQ-IPU-006;REQ-ASW-007;;;Calibration Algorithms;"REQ-IPU-006:
+The processing unit shall process calibration data and apply corrections.";The software shall apply calibration corrections to raw data.;Linked to science accuracy.;;;ASW;;;;Verify via calibration validation.;;;;
+;REQ-MIS-004;;;REQ-IPU-001;;REQ-IPU-001;REQ-ASW-008;;;Error Handling;"REQ-IPU-001:
+The processing unit shall process instrument data in real time without loss.";The software shall detect, log, and respond to runtime errors.;Report to spacecraft.;;;ASW;;;;Verify via fault injection.;;;;
+;;;;;;Created;REQ-ASW-009;;;Data Pool;;The software shall store and make all parameters for data acquisition available through a dedicated data pool;All parameters are stored in a data pool;;;ASW;;;;Verify through TM/TC packages;;;;
+;REQ-MIS-004;REQ-SYS-006;REQ-INST-001;;;REQ-INST-001;REQ-IPU-004;;;Interface Support;"REQ-INST-001:
+The instrument shall provide telemetry to the spacecraft data handling system.";The processing unit shall support required communication interfaces.;Deleted;;;IPU;;;;Verify via interface validation.;;;;
+;REQ-MIS-004;REQ-SYS-006;;;;REQ-SYS-006;REQ-INST-004;Data Generation;;;"REQ-SYS-006:
+The spacecraft shall handle, store, and route science and housekeeping data.";The instrument shall generate science data per defined cycles.;Deleted;;;INST;;;;Verify via functional testing.;;;;
+;REQ-MIS-003;REQ-SYS-003;;;;REQ-SYS-003;REQ-INST-005;Power Consumption;;;"REQ-SYS-003:
+The spacecraft shall provide sufficient electrical power to all subsystems.";The instrument shall operate within allocated power budget.;Defined at system level.;;;INST;;;;Verify via measurement.;;;;
+;REQ-MIS-001;REQ-SYS-005;;;;REQ-SYS-005;REQ-INST-007;Environmental Compatibility;;;"REQ-SYS-005:
+The spacecraft shall withstand mission environmental conditions.";The instrument shall operate within spacecraft environmental conditions.;Thermal and radiation constraints.;;;INST;;;;Verify via environmental testing.;;;;
+;REQ-MIS-002;;;;;REQ-MIS-002;REQ-SYS-001;;;Payload Accommodation;"REQ-MIS-002:
+The mission shall collect quantitative measurements of defined physical parameters.";The spacecraft shall provide interfaces for payload instruments.;Mechanical, electrical, thermal.;;;SYS;;;;Verify via interface testing.;;;;

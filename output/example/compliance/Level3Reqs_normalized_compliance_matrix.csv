@@ -1,0 +1,9 @@
+ParentID;RequirementID;Type;SubType;Title;Definition;Notes;Remarks;Responsibility;SubSysApplicability;Applicability;Compliance;ComplianceNotes;Verification;VerificationNotes;ReferenceDocument;OriginalESAIdentifier;UpdatesMade
+REQ-SYS-006;REQ-INST-004;Data Generation;;;The instrument shall generate science data per defined cycles.;Deleted;;;INST;;;;Verify via functional testing.;;;;
+REQ-SYS-003;REQ-INST-005;Power Consumption;;;The instrument shall operate within allocated power budget.;Defined at system level.;;;INST;;;;Verify via measurement.;;;;
+REQ-SYS-005;REQ-INST-007;Environmental Compatibility;;;The instrument shall operate within spacecraft environmental conditions.;Thermal and radiation constraints.;;;INST;;;;Verify via environmental testing.;;;;
+REQ-SYS-006;REQ-INST-001;Telemetry Interface;;;The instrument shall provide telemetry to the spacecraft data handling system.;Standard interface required.;;;INST;;;;Verify via interface testing.;;;;
+REQ-SYS-002;REQ-INST-002;Command Interface;;;The instrument shall accept and execute spacecraft telecommands.;Include validation.;;;INST;;;;Verify via command testing.;;;;
+REQ-SYS-004;REQ-INST-003;Operational Modes;;;The instrument shall support defined operational modes.;E.g., standby, active, safe.;;;INST;;;;Verify via mode testing.;;;;
+REQ-INST-003;REQ-INST-031;Mode Tracking;;;The instrument shall support Tracking of an observation target;Realised in Software;;;INST;;;;Verify via specific mode testing.;;;;
+REQ-SYS-007;REQ-INST-006;Calibration Function;;;The instrument shall support internal and/or external calibration.;Linked to accuracy requirements.;;;INST;;;;Verify via calibration tests.;;;;

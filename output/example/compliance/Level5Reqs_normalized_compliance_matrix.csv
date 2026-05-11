@@ -1,0 +1,18 @@
+ParentID;RequirementID;Type;SubType;Title;Definition;Notes;Remarks;Responsibility;SubSysApplicability;Applicability;Compliance;ComplianceNotes;Verification;VerificationNotes;ReferenceDocument;OriginalESAIdentifier;UpdatesMade
+REQ-IPU-001;REQ-ASW-001;;;Boot Initialization;The software shall initialize hardware and enter a safe operational state on startup.;Includes self-checks.;;;ASW;;;;Verify via startup testing.;;;;
+REQ-IPU-007;REQ-ASW-002;;;Command Processing;The software shall decode and execute received commands.;Reject invalid commands.;;;ASW;;;;Verify via command tests.;;;;
+"REQ-IPU-001
+REQ-IPU-002
+REQ-IPU-003
+REQ-IPU-004 [DELETED]";REQ-ASW-003;;;Data Acquisition;The software shall acquire and buffer instrument data.;Define buffer limits.;;;ASW;;;;Verify via data flow testing.;;;;
+"REQ-IPU-001
+REQ-IPU-002
+REQ-IPU-003
+REQ-IPU-004 [DELETED]";REQ-ASW-004;;;Data Processing;The software shall process raw data into calibrated outputs.;Algorithms defined separately.;;;ASW;;;;Verify via validation tests.;;;;
+REQ-IPU-002;REQ-ASW-005;;;Memory Management;The software shall manage memory allocation and prevent overflow.;Include error handling.;;;ASW;;;;Verify via stress testing.;;;;
+REQ-IPU-005;REQ-ASW-006;;;Mode Management;The software shall control transitions between operational modes.;Ensure safe fallback.;;;ASW;;;;Verify via mode transition testing.;;;;
+"REQ-INST-003
+REQ-INST-031";REQ-ASW-061;;;Mode Tracking;The software shall implement a Tracking procedure;;;;ASW;;;;;;;;
+REQ-IPU-006;REQ-ASW-007;;;Calibration Algorithms;The software shall apply calibration corrections to raw data.;Linked to science accuracy.;;;ASW;;;;Verify via calibration validation.;;;;
+REQ-IPU-001;REQ-ASW-008;;;Error Handling;The software shall detect, log, and respond to runtime errors.;Report to spacecraft.;;;ASW;;;;Verify via fault injection.;;;;
+;REQ-ASW-009;;;Data Pool;The software shall store and make all parameters for data acquisition available through a dedicated data pool;All parameters are stored in a data pool;;;ASW;;;;Verify through TM/TC packages;;;;
